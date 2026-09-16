@@ -380,6 +380,26 @@ tbody tr:last-child td{border-bottom:none}
     width:297mm;min-height:210mm;page-break-after:always}
 }
 
+/* ---------- แป้นกรอกรหัส PIN ----------
+   ปุ่มใหญ่พอกดด้วยนิ้วโป้งบนมือถือได้ถนัด และไม่ต้องเรียกแป้นพิมพ์ของเครื่องขึ้นมา
+   จุดหกจุดด้านบนบอกว่ากรอกไปแล้วกี่หลัก โดยไม่เปิดเผยตัวเลขที่กด */
+.pinbox{max-width:360px;margin:0 auto;text-align:center}
+.pinbox .ttl{font-size:.92rem;color:var(--text-soft);margin-bottom:.9rem}
+.pindots{display:flex;justify-content:center;gap:.65rem;margin-bottom:1.3rem}
+.pindots i{width:.85rem;height:.85rem;border-radius:50%;background:var(--line);
+  transition:background .15s,transform .15s}
+.pindots i.on{background:var(--accent);transform:scale(1.12)}
+.pindots.err i{background:var(--risk,#c0392b)}
+.pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}
+.pinpad button{padding:.95rem .4rem;border-radius:10px;border:1px solid var(--line);
+  background:var(--line-soft);font-family:'Noto Serif Thai',serif;
+  font-size:1.35rem;font-weight:600;color:var(--accent-fg);line-height:1.1}
+.pinpad button:hover{border-color:var(--accent);background:var(--accent-soft)}
+.pinpad button:active{transform:scale(.96)}
+.pinpad button.clr{background:var(--risk-bg,#fdecea);color:var(--risk,#c0392b);font-size:1.15rem}
+.pinpad button.del{background:var(--warn-bg,#fff6e0);color:var(--warn,#b8860b);font-size:1.15rem}
+.pinbox .msg{margin-top:.9rem;font-size:.84rem;min-height:1.2rem;line-height:1.5}
+
 .picklist{max-height:540px;overflow-y:auto}
 .picklist button{display:block;width:100%;text-align:left;padding:.42rem .68rem;border:none;border-left:3px solid transparent;background:none;font-size:.84rem;line-height:1.4}
 .picklist button:hover{background:var(--line-soft)}
@@ -1394,6 +1414,10 @@ const S={
   prgSid:null, iqMsg:"", irrTab:"sum", pfPhotoMsg:"", pfPhotoErr:false, xaiTab:"global", xaiModel:"logreg", xaiSid:null, fy:"all", fp:"all", repView:null, repMsg:"", repErr:false, irtModel:"m4pl", irtCmp:false,
   mtState:null, mtDiag:null, mtLoad:null, difVar:"program", cdmBusy:false, cdmMsg:"",
   certYear:0, certMsg:"",      /* หน้าใบรับรอง · ตัวกรองชั้นปี และข้อความผลการทำงานล่าสุด */
+  /* รหัส PIN · authMode เลือกวิธีเข้าสู่ระบบ · pin คือเลขที่กำลังกรอก
+     pinSet/pinStage/pinFirst/pinPw ใช้ระหว่างตั้งรหัสในหน้าโปรไฟล์ */
+  authMode:"", pin:"", pinMsg:"", pinErr:false, pinBusy:false,
+  pinSet:false, pinStage:1, pinFirst:"", pinPw:"", pinCardMsg:"", pinCardErr:false,
   edmModel:"logreg", edmCompare:false, edmSid:null, edmBusy:false,
   iqComp:null, iqTab:"ctt", iqItem:0,
   examComp:null, examAns:{}, examItems:[], examAttemptId:null, examDone:false, examQ:0, examBusy:false, examDbSaved:false,
@@ -1685,6 +1709,177 @@ function authArt(){
       <ul class="ladder-art">${li}</ul></div>
     <div class="auth-foot">คณะครุศาสตร์ · ภาคการศึกษา 1/2569</div></div>`;
 }
+/* ============================================================
+   เข้าใช้เร็วด้วยรหัส PIN 6 หลัก
+
+   รหัส PIN ไม่เคยถูกส่งออกจากเครื่อง และไม่ได้เก็บไว้ที่ใดทั้งสิ้น
+   สิ่งที่เก็บในเครื่องคือข้อมูลเข้าสู่ระบบที่ถูกเข้ารหัสด้วยกุญแจซึ่งสร้างจากรหัส PIN
+   ด้วย PBKDF2 (SHA-256) แล้วเข้ารหัสด้วย AES-GCM
+   กรอก PIN ถูกจึงจะถอดรหัสได้ แล้วระบบจึงเข้าสู่ระบบตามปกติให้เอง
+
+   ทำไมไม่เก็บโทเคนเซสชันแทน เพราะโทเคนมีอายุเพียงแปดชั่วโมง
+   ผู้ใช้จะต้องกรอกรหัสผ่านใหม่ทุกวัน ซึ่งไม่ต่างจากเดิม
+
+   จำนวนรอบ PBKDF2 เลือกจากการวัดจริงบนเครื่องผู้ใช้
+   250,000 รอบใช้เวลา 35–52 มิลลิวินาที · 1,000,000 รอบใช้ 143–148
+   เลือกหนึ่งล้านรอบ เพราะผู้ใช้แทบไม่รู้สึกถึงความต่าง
+   แต่ทำให้การไล่เดารหัสหกหลักครบหนึ่งล้านแบบช้าลงเป็นราวสี่สิบชั่วโมงต่อหนึ่งหน่วยประมวลผล
+
+   ป้องกันการเดาซ้ำ ๆ: กรอกผิดครบห้าครั้งจะลบข้อมูลที่เก็บไว้ทิ้ง ต้องกลับไปใช้รหัสผ่าน
+   ============================================================ */
+const PIN_KEY="ptru_pin_v1", PIN_LEN=6, PIN_MAX_TRY=5, PIN_ITER=1000000;
+
+/** ใช้ได้เฉพาะเมื่อเบราว์เซอร์มี Web Crypto ซึ่งต้องเปิดผ่าน https หรือ localhost
+    เปิดไฟล์ด้วย file:// จะไม่มี crypto.subtle จึงต้องปิดคุณสมบัตินี้ไว้ */
+const pinSupported=()=>!!(window.crypto&&window.crypto.subtle&&window.isSecureContext!==false);
+
+function pinRead(){
+  try{ const v=localStorage.getItem(PIN_KEY); return v?JSON.parse(v):null; }catch(e){ return null; }
+}
+function pinWrite(o){ try{ localStorage.setItem(PIN_KEY,JSON.stringify(o)); }catch(e){} }
+function pinClear(){ try{ localStorage.removeItem(PIN_KEY); }catch(e){} }
+const pinHas=()=>{ const o=pinRead(); return !!(o&&o.ct&&o.salt&&o.iv); };
+
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+
+/** สร้างกุญแจ AES จากรหัส PIN ด้วย PBKDF2 จำนวนรอบสูงเพื่อให้การเดาแบบออฟไลน์ช้าลงมาก */
+async function pinKey(pin,salt){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(String(pin)),
+    "PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2",salt:salt,iterations:PIN_ITER,hash:"SHA-256"},
+    base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+
+/** ผูกรหัส PIN กับข้อมูลเข้าสู่ระบบของเครื่องนี้ */
+async function pinSetup(pin,email,password,name){
+  if(!pinSupported()) throw new Error("เบราว์เซอร์นี้ใช้รหัส PIN ไม่ได้ ต้องเปิดผ่าน https");
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await pinKey(pin,salt);
+  const data=new TextEncoder().encode(JSON.stringify({email:email,password:password}));
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,data);
+  pinWrite({v:1,salt:b64(salt),iv:b64(iv),ct:b64(ct),
+    hint:String(email||"").replace(/^(.{2}).*(@.*)$/,"$1•••$2"),
+    name:String(name||""),at:new Date().toISOString(),tries:0});
+  return true;
+}
+
+/** ถอดข้อมูลเข้าสู่ระบบด้วยรหัส PIN คืน null เมื่อรหัสไม่ถูกต้อง */
+async function pinOpen(pin){
+  const o=pinRead(); if(!o) return null;
+  try{
+    const key=await pinKey(pin,unb64(o.salt));
+    const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(o.iv)},key,unb64(o.ct));
+    o.tries=0; pinWrite(o);
+    return JSON.parse(new TextDecoder().decode(pt));
+  }catch(e){
+    /* AES-GCM ตรวจความถูกต้องในตัว รหัสผิดจะถอดไม่ผ่านเสมอ ไม่ต้องเก็บค่าตรวจสอบแยก
+       ซึ่งแปลว่าไฟล์ที่เก็บไว้ไม่มีอะไรให้ใช้ยืนยันว่าเดาถูกโดยไม่ต้องถอดรหัสจริง */
+    o.tries=(Number(o.tries)||0)+1;
+    if(o.tries>=PIN_MAX_TRY){ pinClear(); return {wiped:true}; }
+    pinWrite(o);
+    return {left:PIN_MAX_TRY-o.tries};
+  }
+}
+
+/** ตรวจรหัส PIN แล้วเข้าสู่ระบบให้อัตโนมัติเมื่อถูกต้อง
+    เรียกทันทีที่กรอกครบหกหลัก ผู้ใช้จึงไม่ต้องกดปุ่มยืนยันอีกครั้ง */
+async function pinSubmit(){
+  const pin=S.pin||"";
+  if(pin.length!==PIN_LEN||S.pinBusy) return;
+  S.pinBusy=true; S.pinErr=false; S.pinMsg="กำลังตรวจสอบ…"; render();
+  try{
+    const r=await pinOpen(pin);
+    if(r&&r.wiped){
+      S.pin=""; S.pinBusy=false; S.authMode="password";
+      S.err=`กรอกรหัส PIN ผิดครบ ${PIN_MAX_TRY} ครั้ง ระบบลบรหัส PIN ของเครื่องนี้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่าน`;
+      render(); return;
+    }
+    if(!r||!r.email){
+      S.pin=""; S.pinBusy=false; S.pinErr=true;
+      S.pinMsg=`รหัส PIN ไม่ถูกต้อง${r&&r.left?` · เหลืออีก ${r.left} ครั้งก่อนระบบลบรหัส PIN ของเครื่องนี้`:""}`;
+      render(); return;
+    }
+    S.pinMsg="รหัสถูกต้อง กำลังเข้าสู่ระบบ…"; render();
+    /* ต่อฐานข้อมูลได้ให้เข้าสู่ระบบผ่านเซิร์ฟเวอร์ตามปกติ โหมดสาธิตเทียบกับบัญชีในไฟล์
+       ใช้ LIVE.on ไม่ใช่ liveOn() เพราะ liveOn() ต้องมีเซสชันอยู่แล้ว ซึ่งตอนนี้ยังไม่มี */
+    if(LIVE.on){
+      const ok=await liveLogin(r.email,r.password);
+      S.pinBusy=false; S.pin="";
+      if(!ok){ S.pinErr=true; S.pinMsg="ข้อมูลเข้าสู่ระบบที่เก็บไว้ใช้ไม่ได้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านแล้วตั้งรหัส PIN ใหม่"; }
+      render(); return;
+    }
+    const key=String(r.email||"").toLowerCase();
+    const u=USERS.find(x=>x.email.toLowerCase()===key)
+          ||USERS.find(x=>String(x.code||"").toLowerCase()===key);
+    S.pinBusy=false; S.pin="";
+    if(!u||r.password!==(u.pw||PASSWORD)){
+      S.pinErr=true; S.pinMsg="บัญชีที่ผูกกับรหัส PIN นี้ใช้ไม่ได้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่าน";
+      render(); return;
+    }
+    S.user=u; S.role=u.roles[0]; S.page="dashboard"; S.err=""; S.pinMsg="";
+    render();
+  }catch(e){
+    S.pinBusy=false; S.pin=""; S.pinErr=true;
+    S.pinMsg="ตรวจสอบรหัส PIN ไม่สำเร็จ ("+((e&&e.message)||"")+")";
+    render();
+  }
+}
+
+/** ปฏิเสธรหัสที่เดาง่าย เพราะเป็นชุดแรกที่คนเดาเสมอ */
+function pinWeak(p){
+  if(/^(\d)\1{5}$/.test(p)) return "เลขซ้ำกันทั้งหกหลักเดาง่ายเกินไป";
+  if("0123456789".indexOf(p)>=0||"9876543210".indexOf(p)>=0) return "เลขเรียงติดกันเดาง่ายเกินไป";
+  return "";
+}
+
+/** ขั้นตอนตั้งรหัส PIN · ครั้งแรกจำไว้ ครั้งที่สองต้องตรงกันจึงจะบันทึก */
+async function pinSetStep(){
+  const pin=S.pin||"";
+  if(pin.length!==PIN_LEN) return;
+  if((S.pinStage||1)===1){
+    const weak=pinWeak(pin);
+    if(weak){ S.pin=""; S.pinErr=true; S.pinMsg=weak+" กรุณาเลือกใหม่"; render(); return; }
+    S.pinFirst=pin; S.pin=""; S.pinStage=2; S.pinErr=false; S.pinMsg="กรอกซ้ำอีกครั้งเพื่อยืนยัน";
+    render(); return;
+  }
+  if(pin!==S.pinFirst){
+    S.pin=""; S.pinStage=1; S.pinFirst=""; S.pinErr=true;
+    S.pinMsg="รหัสทั้งสองครั้งไม่ตรงกัน กรุณาตั้งใหม่อีกครั้ง"; render(); return;
+  }
+  S.pinBusy=true; S.pinMsg="กำลังบันทึก…"; render();
+  try{
+    const u=myUser();
+    await pinSetup(pin,u.email,S.pinPw,u.name);
+    S.pinSet=false; S.pinStage=1; S.pin=""; S.pinFirst=""; S.pinPw="";
+    S.pinBusy=false; S.pinMsg=""; S.pinErr=false; S.pinCardErr=false;
+    S.pinCardMsg="ตั้งรหัส PIN เรียบร้อยแล้ว ครั้งต่อไปเข้าสู่ระบบด้วยรหัส PIN ได้ทันที";
+  }catch(e){
+    S.pinBusy=false; S.pin=""; S.pinStage=1; S.pinFirst=""; S.pinErr=true;
+    S.pinMsg="บันทึกรหัส PIN ไม่สำเร็จ ("+((e&&e.message)||"")+")";
+  }
+  render();
+}
+
+/** แป้นกรอกรหัส PIN ใช้ร่วมกันทั้งหน้าเข้าสู่ระบบและหน้าตั้งค่า */
+function pinPad(title,msg,err){
+  const n=(S.pin||"").length;
+  const dots=Array.from({length:PIN_LEN},(_,i)=>`<i class="${i<n?"on":""}"></i>`).join("");
+  const keys=[1,2,3,4,5,6,7,8,9].map(d=>`<button data-act="pind" data-k="${d}">${d}</button>`).join("");
+  return `<div class="pinbox">
+    <div class="ttl">${esc(title||"กรอกรหัส PIN 6 หลัก")}</div>
+    <div class="pindots ${err?"err":""}">${dots}</div>
+    <div class="pinpad">${keys}
+      <button class="clr" data-act="pinclr" title="ล้างที่กรอกไว้">↺</button>
+      <button data-act="pind" data-k="0">0</button>
+      <button class="del" data-act="pinbk" title="ลบทีละหลัก">⌫</button>
+    </div>
+    <div class="msg" style="color:${err?"var(--risk)":"var(--muted)"}">${esc(msg||"")}</div>
+  </div>`;
+}
+
 function loginView(){
   const demo=[["u1","ผู้ดูแลระบบ"],["u2","คณบดี"],["u3","ประธานหลักสูตร"],["u4","อาจารย์ (EDU2)"],["u5","ครูพี่เลี้ยง"],
     ["s1","นักศึกษา ปี 4"],["s11","นักศึกษา ปี 3"],["s10","นักศึกษา ปี 1"]]
@@ -1698,9 +1893,31 @@ function loginView(){
     <button class="btn btn-primary" data-act="otp">ยืนยันและเข้าสู่ระบบ</button>
     <div class="linkrow"><button class="linkbtn" data-act="otpback">ย้อนกลับ</button></div>
     ${themeCard()}</div></div></div>`;
+  /* เครื่องที่ตั้งรหัส PIN ไว้แล้ว ให้กรอก PIN เป็นทางหลัก เพราะเร็วกว่าพิมพ์อีเมลกับรหัสผ่านมาก
+     ยังสลับไปใช้รหัสผ่านได้ตลอด เผื่อจำ PIN ไม่ได้หรือต้องการเข้าด้วยบัญชีอื่น */
+  if(pinHas()&&S.authMode!=="password"){
+    const o=pinRead()||{};
+    return `<div class="auth">${authArt()}<div class="auth-panel"><div class="auth-form">
+      <h2>เข้าสู่ระบบด้วยรหัส PIN</h2>
+      <p class="auth-sub">${o.name?esc(o.name):"บัญชีที่ตั้งรหัส PIN ไว้ในเครื่องนี้"}${o.hint?" · "+esc(o.hint):""}</p>
+      ${S.notice?`<div class="alert alert-ok">${esc(S.notice)}</div>`:""}
+      ${S.err?`<div class="alert alert-err">${esc(S.err)}</div>`:""}
+      ${pinPad("กรอกรหัส PIN 6 หลัก",
+        S.pinMsg||(S.pinBusy?"กำลังตรวจสอบและเข้าสู่ระบบ…":"กรอกครบ 6 หลักแล้วระบบจะเข้าสู่ระบบให้อัตโนมัติ"),
+        S.pinErr)}
+      <div class="linkrow" style="margin-top:1.1rem">
+        <button class="linkbtn" data-act="authmode" data-v="password">เข้าสู่ระบบด้วยรหัสผ่าน</button>
+        <button class="linkbtn" data-act="pinforget">ลบรหัส PIN ของเครื่องนี้</button>
+      </div>
+      ${themeCard()}
+    </div></div></div>`;
+  }
+
   return `<div class="auth">${authArt()}<div class="auth-panel"><div class="auth-form">
     <h2>เข้าสู่ระบบ</h2><p class="auth-sub">ใช้บัญชีของมหาวิทยาลัย หรือบัญชีที่ได้รับอนุมัติสำหรับครูพี่เลี้ยง</p>
     ${S.notice?`<div class="alert alert-ok">${esc(S.notice)}</div>`:""}
+    ${pinHas()?`<div class="linkrow" style="margin:0 0 .8rem">
+      <button class="linkbtn" data-act="authmode" data-v="pin">← กลับไปใช้รหัส PIN</button></div>`:""}
     <div class="field"><label for="em">อีเมล</label><input class="inp" id="em" type="email" placeholder="name@ptru.ac.th" data-nore></div>
     <div class="field"><label for="pw">รหัสผ่าน</label><input class="inp" id="pw" type="password" data-nore></div>
     ${S.err?`<div class="alert alert-err">${esc(S.err)}</div>`:""}
@@ -2927,6 +3144,7 @@ function pfSecurity(u){
        ${pwField("sec_p2","ยืนยันรหัสผ่านใหม่",false,"")}
        ${err}<button class="btn btn-primary" data-act="pfpw">บันทึกรหัสผ่านใหม่</button>`)}
     <div class="stack">
+      ${pfPinCard(u)}
       ${card("สถานะความปลอดภัยของบัญชี","",
         `<table class="tight"><tbody>
           <tr><td style="color:var(--muted)">การยืนยันสองขั้นตอน</td>
@@ -2943,6 +3161,47 @@ function pfSecurity(u){
         <li>ออกจากระบบทุกครั้งเมื่อใช้เครื่องคอมพิวเตอร์ร่วมกัน</li>
         <li>หากสงสัยว่ามีผู้เข้าถึงบัญชี ให้เปลี่ยนรหัสผ่านและแจ้งผู้ดูแลระบบทันที</li></ul>`)}
     </div></div>`;
+}
+
+/** ตั้งหรือลบรหัส PIN ของเครื่องนี้
+    ต้องกรอกรหัสผ่านปัจจุบันด้วย เพราะรหัสผ่านคือสิ่งที่ถูกเข้ารหัสเก็บไว้
+    และเป็นการยืนยันตัวตนก่อนผูก PIN กับเครื่อง กันคนอื่นมาตั้ง PIN บนเครื่องที่เปิดค้างไว้ */
+function pfPinCard(u){
+  const has=pinHas(), o=pinRead()||{};
+  if(!pinSupported())
+    return card("เข้าใช้เร็วด้วยรหัส PIN","",
+      `<div class="notebox" style="margin:0">เบราว์เซอร์นี้ใช้รหัส PIN ไม่ได้
+        เพราะต้องเปิดหน้าเว็บผ่าน https หรือ localhost จึงจะเข้ารหัสข้อมูลได้อย่างปลอดภัย</div>`);
+
+  if(S.pinSet){
+    const step2=(S.pinStage||1)===2;
+    return card("ตั้งรหัส PIN 6 หลัก",
+      step2?"กรอกซ้ำอีกครั้งเพื่อยืนยัน":"เลือกตัวเลข 6 หลักที่จำได้ และไม่ใช่วันเกิดหรือเลขเรียงกัน",
+      pinPad(step2?"ยืนยันรหัส PIN อีกครั้ง":"ตั้งรหัส PIN 6 หลัก",
+        S.pinMsg||(step2?"กรอกให้ตรงกับครั้งแรก":"กรอกครบ 6 หลักแล้วจะให้ยืนยันอีกครั้ง"),S.pinErr),
+      `<div class="row"><button class="btn btn-ghost btn-sm" data-act="pinsetcancel">ยกเลิก</button></div>`);
+  }
+
+  return card("เข้าใช้เร็วด้วยรหัส PIN",
+    has?"เครื่องนี้ตั้งรหัส PIN ไว้แล้ว":"ตั้งครั้งเดียว แล้วครั้งต่อไปกดตัวเลข 6 หลักเข้าระบบได้เลย",
+    `${has
+      ? `<div class="alert alert-ok" style="margin-top:0"><b>ตั้งรหัส PIN ไว้แล้ว</b>
+          ${o.name?"<br>บัญชี "+esc(o.name):""}${o.hint?" · "+esc(o.hint):""}
+          ${o.at?"<br>ตั้งเมื่อ "+esc(String(o.at).slice(0,10)):""}</div>`
+      : ""}
+     <div class="field" style="margin-top:0"><label for="pin_pw">รหัสผ่านปัจจุบัน</label>
+       <input class="inp" id="pin_pw" type="password" autocomplete="current-password" data-nore>
+       <div class="hint">ใช้ยืนยันตัวตนก่อนผูกรหัส PIN กับเครื่องนี้</div></div>
+     ${S.pinCardMsg?`<div class="alert ${S.pinCardErr?"alert-err":"alert-ok"}">${esc(S.pinCardMsg)}</div>`:""}
+     <div class="notebox" style="margin-bottom:0">รหัส PIN ไม่ถูกส่งออกจากเครื่องและไม่ได้เก็บไว้ที่ใด
+       ระบบเก็บเฉพาะข้อมูลเข้าสู่ระบบที่เข้ารหัสด้วยกุญแจซึ่งสร้างจากรหัส PIN ของท่าน
+       (PBKDF2 ${PIN_ITER.toLocaleString()} รอบ ตามด้วย AES-GCM)
+       <br>กรอกผิดครบ ${PIN_MAX_TRY} ครั้ง ระบบจะลบข้อมูลที่เก็บไว้ทิ้งเอง
+       <br>ใช้ได้เฉพาะเครื่องนี้ ไม่มีผลกับอุปกรณ์อื่น</div>`,
+    `<div class="row">
+       <button class="btn btn-primary btn-sm" data-act="pinsetstart">${has?"ตั้งรหัส PIN ใหม่":"ตั้งรหัส PIN"}</button>
+       ${has?`<button class="btn btn-danger btn-sm" data-act="pinremove">ลบรหัส PIN ของเครื่องนี้</button>`:""}
+     </div>`);
 }
 
 /* ---------- ประวัติการประเมิน ---------- */
@@ -4213,20 +4472,29 @@ function assessPage(){
   /* คิดความคืบหน้าหลังเรียกแบบร่างกลับแล้ว มิฉะนั้นจะนับจากคะแนนชุดเก่า */
   const done=cfg.indicators.length>0&&cfg.indicators.every(i=>S.asScores[i.id]);
   const result=done?mean(cfg.indicators.map(i=>S.asScores[i.id])):null;
-  const typeOpts=ASSESS_TYPES.filter(([id])=>allowType(id))
-    .map(([id,l])=>`<option value="${id}" ${S.asType===id?"selected":""}>${l}</option>`).join("");
+  /* บทบาทผู้ประเมินส่วนใหญ่บันทึกได้ช่องทางเดียวอยู่แล้ว เช่น ครูพี่เลี้ยงเลือกได้แค่ "ครูพี่เลี้ยง"
+     กล่องเลือกที่มีตัวเลือกเดียวจึงเป็นภาระสายตาโดยไม่ให้ทางเลือกอะไร แสดงเป็นป้ายบอกแทน
+     เหลือกล่องเลือกไว้เฉพาะบทบาทที่เลือกได้จริง คือนักศึกษาและผู้ดูแล */
+  const allowed=ASSESS_TYPES.filter(([id])=>allowType(id));
+  const typeField=allowed.length>1
+    ? `<div class="field" style="margin-top:0"><label>ประเภทการประเมิน</label>
+        <select class="inp" data-act="astype">${allowed
+          .map(([id,l])=>`<option value="${id}" ${S.asType===id?"selected":""}>${l}</option>`).join("")}</select></div>`
+    : "";
+  const typeChip=allowed.length>1?"":`<span class="tag tag-a">บันทึกในช่องทาง ${esc((allowed[0]||["","—"])[1])}</span>`;
   const indCards=assessWizard(cfg,done);
   return `<div class="grid g2 as-cols">
     <div class="stack">
       ${card("แบบประเมินสมรรถนะ",`${yearOf(FW,y).label} · ระยะ${yearOf(FW,y).stage} · เป้าหมายระดับ ${cfg.target}`,
-        `<div class="grid g3" style="gap:.7rem">
+        `<div class="grid ${allowed.length>1?"g3":"g2"}" style="gap:.7rem">
           ${S.role==="Student"?"":`<div class="field" style="margin-top:0"><label>นักศึกษา</label>
             <select class="inp" data-act="assid">${stu.map(s=>`<option value="${s.id}" ${s.id===S.asSid?"selected":""}>${s.program} ปี ${s.year} · ${esc(s.name)}</option>`).join("")}</select></div>`}
           <div class="field" style="margin-top:0"><label>สมรรถนะ</label>
-            <select class="inp" data-act="ascomp">${comps.map(x=>`<option value="${x.id}" ${x.id===c.id?"selected":""}>${mine[x.id]?"✓ ":"◻ "}${x.code} · ${esc(x.th)}</option>`).join("")}</select>
-            <div class="hint">✓ คือสมรรถนะที่ท่านประเมินนักศึกษารายนี้ไปแล้ว</div></div>
-          <div class="field" style="margin-top:0"><label>ประเภทการประเมิน</label><select class="inp" data-act="astype">${typeOpts}</select></div>
+            <select class="inp" data-act="ascomp">${comps.map(x=>`<option value="${x.id}" ${x.id===c.id?"selected":""}>${mine[x.id]?"✓ ":"◻ "}${x.code} · ${esc(x.th)}</option>`).join("")}</select></div>
+          ${typeField}
         </div>
+        ${typeChip?`<div class="row" style="margin-top:.6rem">${typeChip}
+          <span class="sub">✓ หน้าชื่อสมรรถนะ คือด้านที่ท่านประเมินนักศึกษารายนี้ไปแล้ว</span></div>`:""}
         ${frameworkScopeNote(y,comps)}
         ${mine[c.id]?`<div class="alert alert-info" style="margin-bottom:0">ท่านเคยประเมินสมรรถนะนี้แล้วเมื่อ ${esc(mine[c.id].date||"—")}
           (ครั้งที่ ${mine[c.id].round} · ให้คะแนน ${mine[c.id].n} ตัวชี้วัด) การบันทึกใหม่จะเป็นการประเมินซ้ำในรอบปัจจุบัน</div>`:""}`)}
@@ -4300,7 +4568,9 @@ function assessWizard(cfg,done){
 
     <div class="asw-q"><span class="ic">🎯</span><span class="tx">${esc(ind.th)}</span></div>
 
-    <div class="asw-ask">โปรดเลือก ระดับที่ตรงกับความคิดเห็นของท่าน</div>
+    <div class="asw-ask">โปรดเลือก ระดับที่ตรงกับความคิดเห็นของท่าน
+      <span class="sub" style="margin-left:.4rem">· กดเลข 1–${FW.levels.length} บนแป้นพิมพ์ก็ได้
+      · เลือกแล้วระบบเลื่อนไปข้อถัดไปให้เอง</span></div>
     <div class="asw-lv" style="grid-template-columns:repeat(${FW.levels.length},minmax(0,1fr))">${lv}</div>
 
     ${savedStrip}
@@ -8387,6 +8657,34 @@ document.addEventListener("click",e=>{
       S.err="";
       if(u.roles.some(r=>["Administrator","Dean","Program Chair"].includes(r))){S.otpUser=u;break;}
       S.user=u; S.role=u.roles[0]; S.page="dashboard"; break; }
+    /* --- รหัส PIN --- */
+    case "authmode": S.authMode=v; S.pin=""; S.pinMsg=""; S.pinErr=false; S.err=""; break;
+    case "pind": {
+      if(S.pinBusy){ re=false; break; }
+      if((S.pin||"").length>=PIN_LEN){ re=false; break; }
+      S.pin=(S.pin||"")+String(k); S.pinErr=false; S.pinMsg="";
+      if(S.pin.length!==PIN_LEN) break;
+      if(S.pinSet) pinSetStep(); else pinSubmit();
+      break; }
+    case "pinbk": S.pin=(S.pin||"").slice(0,-1); S.pinErr=false; S.pinMsg=""; break;
+    case "pinclr": S.pin=""; S.pinErr=false; S.pinMsg=""; break;
+    /* ตั้งรหัส PIN จากหน้าโปรไฟล์ · ขั้นแรกกรอก ขั้นสองยืนยัน */
+    case "pinsetstart": {
+      const pw=val("pin_pw");
+      if(!pw){ S.pinCardErr=true; S.pinCardMsg="กรุณากรอกรหัสผ่านปัจจุบันก่อน"; break; }
+      S.pinPw=pw; S.pinSet=true; S.pinStage=1; S.pin=""; S.pinFirst="";
+      S.pinMsg=""; S.pinErr=false; S.pinCardMsg=""; break; }
+    case "pinsetcancel":
+      S.pinSet=false; S.pinStage=1; S.pin=""; S.pinFirst=""; S.pinPw="";
+      S.pinMsg=""; S.pinErr=false; break;
+    case "pinremove":
+      if(!confirm("ลบรหัส PIN ของเครื่องนี้?\n\nครั้งต่อไปต้องเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน")){ re=false; break; }
+      pinClear(); S.pinCardErr=false; S.pinCardMsg="ลบรหัส PIN ของเครื่องนี้แล้ว"; break;
+    case "pinforget":
+      if(!confirm("ลบรหัส PIN ของเครื่องนี้?\n\nครั้งต่อไปต้องเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน")){ re=false; break; }
+      pinClear(); S.authMode="password"; S.pin=""; S.pinMsg="";
+      S.notice="ลบรหัส PIN ของเครื่องนี้แล้ว"; break;
+
     case "otp": { if(val("otp")==="246810"){S.user=S.otpUser;S.role=S.otpUser.roles[0];S.otpUser=null;S.err="";S.page="dashboard";}
       else S.err="รหัสยืนยันไม่ถูกต้อง รหัสมีอายุ 5 นาที"; break; }
     case "otpback": S.otpUser=null; S.err=""; break;
@@ -8851,8 +9149,18 @@ document.addEventListener("click",e=>{
     case "runcdm": S.dxCdm=true; break;
 
     /* --- การประเมิน --- */
-    /* ให้คะแนนหนึ่งข้อ บันทึกแบบร่างทันทีทุกครั้ง คะแนนจึงไม่หายแม้รีเฟรชหน้า */
-    case "asscore": S.asScores[v]=+k; S.asSaved=false; S.asRestored=false; asDraftSave(); break;
+    /* ให้คะแนนหนึ่งข้อ บันทึกแบบร่างทันทีทุกครั้ง คะแนนจึงไม่หายแม้รีเฟรชหน้า
+       ถ้าเป็นการให้คะแนนข้อนี้ครั้งแรก ให้เลื่อนไปข้อถัดไปเองเลย
+       ผู้ประเมินจึงกดครั้งเดียวต่อหนึ่งข้อ ไม่ต้องกด "ถัดไป" ซ้ำอีกสิบครั้ง
+       แต่ถ้าเป็นการแก้คะแนนที่เคยให้ไว้ จะอยู่ที่เดิมเพื่อให้เห็นผลการแก้ */
+    case "asscore": {
+      const first=S.asScores[v]===undefined;
+      S.asScores[v]=+k; S.asSaved=false; S.asRestored=false;
+      if(first){
+        const inds=(cfgOf(FW,(userById(S.asSid)||{}).year,S.asComp).indicators)||[];
+        if(numOr(S.asIdx,0)<inds.length-1) S.asIdx=numOr(S.asIdx,0)+1;
+      }
+      asDraftSave(); break; }
     case "asprev": S.asIdx=Math.max(0,numOr(S.asIdx,0)-1); S.asRestored=false; asDraftSave(); break;
     case "asnext": S.asIdx=numOr(S.asIdx,0)+1; S.asRestored=false; asDraftSave(); break;
     case "asjump": S.asIdx=Math.max(0,numOr(k,0)); S.asRestored=false; asDraftSave(); break;
@@ -10839,6 +11147,32 @@ function aiDraggable(el,isHandle){
 }
 window.addEventListener("resize",()=>{
   ["aiwrap","aipanel"].forEach(id=>{ const el=document.getElementById(id); if(el&&el.style.display!=="none") aiApplyPos(el); });
+});
+
+/* คีย์ลัดของหน้าแบบประเมิน ให้ผู้ประเมินที่ทำหลายคนต่อกันทำงานได้เร็วขึ้น
+   กดเลขระดับเพื่อให้คะแนน กดลูกศรเพื่อเลื่อนข้อ
+   ไม่ทำงานขณะโฟกัสอยู่ในช่องกรอกข้อความ มิฉะนั้นจะพิมพ์ข้อเสนอแนะไม่ได้ */
+document.addEventListener("keydown",e=>{
+  if(S.screen!=="app"||S.page!=="assess") return;
+  if(e.ctrlKey||e.altKey||e.metaKey) return;
+  const t=e.target;
+  if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable)) return;
+  const st=userById(S.asSid); if(!st) return;
+  const inds=(cfgOf(FW,st.year,S.asComp).indicators)||[];
+  if(!inds.length) return;
+  const idx=clamp(numOr(S.asIdx,0),0,inds.length-1);
+  const n=Number(e.key);
+  if(n>=1&&n<=FW.levels.length){
+    e.preventDefault();
+    const id=inds[idx].id, first=S.asScores[id]===undefined;
+    S.asScores[id]=n; S.asSaved=false; S.asRestored=false;
+    if(first&&idx<inds.length-1) S.asIdx=idx+1;
+    asDraftSave(); render(); return;
+  }
+  if(e.key==="ArrowRight"){ e.preventDefault();
+    if(S.asScores[inds[idx].id]!==undefined&&idx<inds.length-1){ S.asIdx=idx+1; asDraftSave(); render(); } return; }
+  if(e.key==="ArrowLeft"){ e.preventDefault();
+    if(idx>0){ S.asIdx=idx-1; asDraftSave(); render(); } return; }
 });
 
 /* กลับมาที่แท็บหลังสลับไปทำอย่างอื่น ให้ตรวจกรอบสมรรถนะอีกครั้ง
