@@ -1415,8 +1415,11 @@ const S={
   mtState:null, mtDiag:null, mtLoad:null, difVar:"program", cdmBusy:false, cdmMsg:"",
   certYear:0, certMsg:"",      /* หน้าใบรับรอง · ตัวกรองชั้นปี และข้อความผลการทำงานล่าสุด */
   /* รหัส PIN · authMode เลือกวิธีเข้าสู่ระบบ · pin คือเลขที่กำลังกรอก
+     pinId คือชื่อผู้ใช้ในหน้ากรอก PIN เพราะรหัส PIN ผูกกับบัญชี ไม่ใช่กับเครื่อง
+     เครื่องที่เคยเข้าด้วย PIN สำเร็จจะเริ่มที่หน้า PIN เลย เพราะเร็วกว่าพิมพ์รหัสผ่าน
      pinSet/pinStage/pinFirst/pinPw ใช้ระหว่างตั้งรหัสในหน้าโปรไฟล์ */
-  authMode:"", pin:"", pinMsg:"", pinErr:false, pinBusy:false,
+  authMode:(function(){ try{ return localStorage.getItem("ptru_pin_id")?"pin":""; }catch(e){ return ""; } })(),
+  pin:"", pinId:null, pinMsg:"", pinErr:false, pinBusy:false,
   pinSet:false, pinStage:1, pinFirst:"", pinPw:"", pinCardMsg:"", pinCardErr:false,
   edmModel:"logreg", edmCompare:false, edmSid:null, edmBusy:false,
   iqComp:null, iqTab:"ctt", iqItem:0,
@@ -1440,9 +1443,11 @@ const S={
 const NAV={
   /* ยกเลิกเมนูรหัสเชิญแล้ว การควบคุมสิทธิ์ย้ายไปอยู่ที่เมนู "คำขอสมัคร"
      ครูพี่เลี้ยงและผู้บริหารสมัครเองได้ แล้วประธานหลักสูตรเป็นผู้อนุมัติ */
-  Administrator:["dashboard","users","approvals","framework","itemq","psychometrics","edm","xai","irr","progress","diagnostic","certs","reports","maintenance"],
-  Dean:["dashboard","analytics","progress","diagnostic","certs","reports"],
-  "Program Chair":["dashboard","users","students","approvals","analytics","portfolio","progress","diagnostic","certs","reports"],
+  /* ผู้บริหารและผู้ดูแลระบบก็ต้องเข้าหน้าโปรไฟล์ได้ เพราะเป็นที่เดียวที่เปลี่ยนรหัสผ่าน
+     และตั้งรหัส PIN 6 หลักสำหรับเข้าใช้เร็วได้ เดิมไม่มีเมนูนี้จึงทำสองอย่างนั้นไม่ได้เลย */
+  Administrator:["dashboard","profile","users","approvals","framework","itemq","psychometrics","edm","xai","irr","progress","diagnostic","certs","reports","maintenance"],
+  Dean:["dashboard","profile","analytics","progress","diagnostic","certs","reports"],
+  "Program Chair":["dashboard","profile","users","students","approvals","analytics","portfolio","progress","diagnostic","certs","reports"],
   Lecturer:["dashboard","profile","students","assess","portfolio","progress"],
   MajorAdvisor:["dashboard","profile","students","assess","portfolio","progress"],
   Mentor:["dashboard","profile","students","assess","portfolio","progress"],
@@ -1712,127 +1717,89 @@ function authArt(){
 /* ============================================================
    เข้าใช้เร็วด้วยรหัส PIN 6 หลัก
 
-   รหัส PIN ไม่เคยถูกส่งออกจากเครื่อง และไม่ได้เก็บไว้ที่ใดทั้งสิ้น
-   สิ่งที่เก็บในเครื่องคือข้อมูลเข้าสู่ระบบที่ถูกเข้ารหัสด้วยกุญแจซึ่งสร้างจากรหัส PIN
-   ด้วย PBKDF2 (SHA-256) แล้วเข้ารหัสด้วย AES-GCM
-   กรอก PIN ถูกจึงจะถอดรหัสได้ แล้วระบบจึงเข้าสู่ระบบตามปกติให้เอง
+   รหัส PIN ผูกกับ "บัญชี" ไม่ใช่กับเครื่อง จึงใช้เข้าระบบได้จากทุกอุปกรณ์
+   ตั้งครั้งเดียวแล้วใช้ได้ทั้งบนคอมพิวเตอร์ที่คณะ มือถือส่วนตัว หรือแท็บเล็ตที่โรงเรียนฝึกสอน
 
-   ทำไมไม่เก็บโทเคนเซสชันแทน เพราะโทเคนมีอายุเพียงแปดชั่วโมง
-   ผู้ใช้จะต้องกรอกรหัสผ่านใหม่ทุกวัน ซึ่งไม่ต่างจากเดิม
+   เซิร์ฟเวอร์เป็นผู้ตรวจรหัส และเก็บไว้เป็นแฮชพร้อมเกลือเช่นเดียวกับรหัสผ่าน
+   ไม่มีการเก็บตัวเลขจริงทั้งบนเครื่องและในฐานข้อมูล
 
-   จำนวนรอบ PBKDF2 เลือกจากการวัดจริงบนเครื่องผู้ใช้
-   250,000 รอบใช้เวลา 35–52 มิลลิวินาที · 1,000,000 รอบใช้ 143–148
-   เลือกหนึ่งล้านรอบ เพราะผู้ใช้แทบไม่รู้สึกถึงความต่าง
-   แต่ทำให้การไล่เดารหัสหกหลักครบหนึ่งล้านแบบช้าลงเป็นราวสี่สิบชั่วโมงต่อหนึ่งหน่วยประมวลผล
+   เพราะรหัสหกหลักมีเพียงหนึ่งล้านแบบ จึงต้องกรอกชื่อผู้ใช้หรืออีเมลมาด้วยเสมอ
+   และใช้ตัวนับครั้งที่ผิดร่วมกับการเข้าสู่ระบบด้วยรหัสผ่าน
+   ผิดครบตามที่กำหนดบัญชีจะถูกล็อกชั่วคราว การไล่เดาจึงทำไม่ได้จริง
 
-   ป้องกันการเดาซ้ำ ๆ: กรอกผิดครบห้าครั้งจะลบข้อมูลที่เก็บไว้ทิ้ง ต้องกลับไปใช้รหัสผ่าน
+   เครื่องนี้จำไว้เพียงชื่อผู้ใช้ที่เข้าล่าสุด เพื่อกรอกให้ล่วงหน้า ซึ่งไม่ใช่ความลับ
    ============================================================ */
-const PIN_KEY="ptru_pin_v1", PIN_LEN=6, PIN_MAX_TRY=5, PIN_ITER=1000000;
+const PIN_LEN=6, PIN_ID_KEY="ptru_pin_id";
 
-/** ใช้ได้เฉพาะเมื่อเบราว์เซอร์มี Web Crypto ซึ่งต้องเปิดผ่าน https หรือ localhost
-    เปิดไฟล์ด้วย file:// จะไม่มี crypto.subtle จึงต้องปิดคุณสมบัตินี้ไว้ */
-const pinSupported=()=>!!(window.crypto&&window.crypto.subtle&&window.isSecureContext!==false);
+/** ชื่อผู้ใช้ที่เข้าระบบล่าสุดบนเครื่องนี้ ใช้กรอกให้ล่วงหน้าเท่านั้น */
+function pinIdGet(){ try{ return localStorage.getItem(PIN_ID_KEY)||""; }catch(e){ return ""; } }
+function pinIdSet(v){ try{ localStorage.setItem(PIN_ID_KEY,String(v||"")); }catch(e){} }
+function pinIdClear(){ try{ localStorage.removeItem(PIN_ID_KEY); }catch(e){} }
 
-function pinRead(){
-  try{ const v=localStorage.getItem(PIN_KEY); return v?JSON.parse(v):null; }catch(e){ return null; }
+/** บัญชีของผู้ใช้ปัจจุบันอาจมีสองอ็อบเจกต์ คือค่าที่ได้ตอนเข้าสู่ระบบ กับแถวในรายชื่อผู้ใช้
+    จึงต้องอ่านและเขียนสถานะรหัส PIN ให้ครบทั้งคู่ ไม่อย่างนั้นการ์ดในหน้าโปรไฟล์จะแสดงค่าเก่า */
+function pinSelf(){
+  const a=[], m=(S.user?myUser():null);
+  if(m) a.push(m);
+  if(S.user&&S.user!==m) a.push(S.user);
+  return a;
 }
-function pinWrite(o){ try{ localStorage.setItem(PIN_KEY,JSON.stringify(o)); }catch(e){} }
-function pinClear(){ try{ localStorage.removeItem(PIN_KEY); }catch(e){} }
-const pinHas=()=>{ const o=pinRead(); return !!(o&&o.ct&&o.salt&&o.iv); };
+function pinHasNow(){ return pinSelf().some(x=>x.hasPin); }
+function pinSetAtNow(){ const x=pinSelf().find(y=>y.pinSetAt); return x?String(x.pinSetAt):""; }
 
-const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
-const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-
-/** สร้างกุญแจ AES จากรหัส PIN ด้วย PBKDF2 จำนวนรอบสูงเพื่อให้การเดาแบบออฟไลน์ช้าลงมาก */
-async function pinKey(pin,salt){
-  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(String(pin)),
-    "PBKDF2",false,["deriveKey"]);
-  return crypto.subtle.deriveKey(
-    {name:"PBKDF2",salt:salt,iterations:PIN_ITER,hash:"SHA-256"},
-    base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
-}
-
-/** ผูกรหัส PIN กับข้อมูลเข้าสู่ระบบของเครื่องนี้ */
-async function pinSetup(pin,email,password,name){
-  if(!pinSupported()) throw new Error("เบราว์เซอร์นี้ใช้รหัส PIN ไม่ได้ ต้องเปิดผ่าน https");
-  const salt=crypto.getRandomValues(new Uint8Array(16));
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const key=await pinKey(pin,salt);
-  const data=new TextEncoder().encode(JSON.stringify({email:email,password:password}));
-  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,data);
-  pinWrite({v:1,salt:b64(salt),iv:b64(iv),ct:b64(ct),
-    hint:String(email||"").replace(/^(.{2}).*(@.*)$/,"$1•••$2"),
-    name:String(name||""),at:new Date().toISOString(),tries:0});
-  return true;
+/** คำสั่งชุดรหัส PIN เพิ่งเพิ่มเข้ามา เซิร์ฟเวอร์รุ่นก่อนจะตอบว่าไม่พบคำสั่ง
+    เปลี่ยนเป็นข้อความที่บอกวิธีแก้ตรง ๆ แทนที่จะปล่อยข้อความดิบให้ผู้ใช้งง */
+function pinErrMsg(e, dflt){
+  const noRoute=String(e&&e.code)==="NO_ROUTE"||/ไม่พบคำสั่ง/.test((e&&e.message)||"");
+  if(noRoute) return "เซิร์ฟเวอร์ยังเป็นรุ่นก่อนที่ยังไม่มีรหัส PIN กรุณา deploy Code.gs รุ่นล่าสุด "
+    +"แล้วเข้าสู่ระบบด้วยรหัสผ่านไปก่อน";
+  return (e&&e.message)||dflt;
 }
 
-/** ถอดข้อมูลเข้าสู่ระบบด้วยรหัส PIN คืน null เมื่อรหัสไม่ถูกต้อง */
-async function pinOpen(pin){
-  const o=pinRead(); if(!o) return null;
-  try{
-    const key=await pinKey(pin,unb64(o.salt));
-    const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(o.iv)},key,unb64(o.ct));
-    o.tries=0; pinWrite(o);
-    return JSON.parse(new TextDecoder().decode(pt));
-  }catch(e){
-    /* AES-GCM ตรวจความถูกต้องในตัว รหัสผิดจะถอดไม่ผ่านเสมอ ไม่ต้องเก็บค่าตรวจสอบแยก
-       ซึ่งแปลว่าไฟล์ที่เก็บไว้ไม่มีอะไรให้ใช้ยืนยันว่าเดาถูกโดยไม่ต้องถอดรหัสจริง */
-    o.tries=(Number(o.tries)||0)+1;
-    if(o.tries>=PIN_MAX_TRY){ pinClear(); return {wiped:true}; }
-    pinWrite(o);
-    return {left:PIN_MAX_TRY-o.tries};
-  }
-}
-
-/** ตรวจรหัส PIN แล้วเข้าสู่ระบบให้อัตโนมัติเมื่อถูกต้อง
-    เรียกทันทีที่กรอกครบหกหลัก ผู้ใช้จึงไม่ต้องกดปุ่มยืนยันอีกครั้ง */
-async function pinSubmit(){
-  const pin=S.pin||"";
-  if(pin.length!==PIN_LEN||S.pinBusy) return;
-  S.pinBusy=true; S.pinErr=false; S.pinMsg="กำลังตรวจสอบ…"; render();
-  try{
-    const r=await pinOpen(pin);
-    if(r&&r.wiped){
-      S.pin=""; S.pinBusy=false; S.authMode="password";
-      S.err=`กรอกรหัส PIN ผิดครบ ${PIN_MAX_TRY} ครั้ง ระบบลบรหัส PIN ของเครื่องนี้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่าน`;
-      render(); return;
-    }
-    if(!r||!r.email){
-      S.pin=""; S.pinBusy=false; S.pinErr=true;
-      S.pinMsg=`รหัส PIN ไม่ถูกต้อง${r&&r.left?` · เหลืออีก ${r.left} ครั้งก่อนระบบลบรหัส PIN ของเครื่องนี้`:""}`;
-      render(); return;
-    }
-    S.pinMsg="รหัสถูกต้อง กำลังเข้าสู่ระบบ…"; render();
-    /* ต่อฐานข้อมูลได้ให้เข้าสู่ระบบผ่านเซิร์ฟเวอร์ตามปกติ โหมดสาธิตเทียบกับบัญชีในไฟล์
-       ใช้ LIVE.on ไม่ใช่ liveOn() เพราะ liveOn() ต้องมีเซสชันอยู่แล้ว ซึ่งตอนนี้ยังไม่มี */
-    if(LIVE.on){
-      const ok=await liveLogin(r.email,r.password);
-      S.pinBusy=false; S.pin="";
-      if(!ok){ S.pinErr=true; S.pinMsg="ข้อมูลเข้าสู่ระบบที่เก็บไว้ใช้ไม่ได้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านแล้วตั้งรหัส PIN ใหม่"; }
-      render(); return;
-    }
-    const key=String(r.email||"").toLowerCase();
-    const u=USERS.find(x=>x.email.toLowerCase()===key)
-          ||USERS.find(x=>String(x.code||"").toLowerCase()===key);
-    S.pinBusy=false; S.pin="";
-    if(!u||r.password!==(u.pw||PASSWORD)){
-      S.pinErr=true; S.pinMsg="บัญชีที่ผูกกับรหัส PIN นี้ใช้ไม่ได้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่าน";
-      render(); return;
-    }
-    S.user=u; S.role=u.roles[0]; S.page="dashboard"; S.err=""; S.pinMsg="";
-    render();
-  }catch(e){
-    S.pinBusy=false; S.pin=""; S.pinErr=true;
-    S.pinMsg="ตรวจสอบรหัส PIN ไม่สำเร็จ ("+((e&&e.message)||"")+")";
-    render();
-  }
-}
-
-/** ปฏิเสธรหัสที่เดาง่าย เพราะเป็นชุดแรกที่คนเดาเสมอ */
+/** ปฏิเสธรหัสที่เดาง่าย ตรวจซ้ำที่เซิร์ฟเวอร์อีกชั้นด้วย */
 function pinWeak(p){
+  if(!/^\d{6}$/.test(p)) return "รหัส PIN ต้องเป็นตัวเลข 6 หลัก";
   if(/^(\d)\1{5}$/.test(p)) return "เลขซ้ำกันทั้งหกหลักเดาง่ายเกินไป";
   if("0123456789".indexOf(p)>=0||"9876543210".indexOf(p)>=0) return "เลขเรียงติดกันเดาง่ายเกินไป";
   return "";
+}
+
+/** เข้าสู่ระบบด้วยรหัส PIN เรียกทันทีที่กรอกครบหกหลัก */
+async function pinSubmit(){
+  const pin=S.pin||"", id=String(S.pinId||"").trim();
+  if(pin.length!==PIN_LEN||S.pinBusy) return;
+  if(!id){ S.pin=""; S.pinErr=true; S.pinMsg="กรุณากรอกชื่อผู้ใช้หรืออีเมลก่อน"; render(); return; }
+  S.pinBusy=true; S.pinErr=false; S.pinMsg="กำลังตรวจสอบ…"; render();
+  try{
+    /* โหมดจริง · ใช้เส้นทางเดียวกับการเข้าด้วยรหัสผ่านทุกประการ
+       เซิร์ฟเวอร์เป็นผู้ตรวจรหัส PIN และเป็นผู้นับครั้งที่ผิด */
+    if(LIVE.on){
+      const ok=await liveLogin(id,"",pin);
+      S.pinBusy=false; S.pin="";
+      if(ok){ S.pinMsg=""; S.pinErr=false; }
+      else {
+        S.pinErr=true;
+        S.pinMsg=pinErrMsg({message:S.err},"เข้าสู่ระบบด้วยรหัส PIN ไม่สำเร็จ");
+        S.err="";
+      }
+      render(); return;
+    }
+    /* โหมดสาธิตไม่มีเซิร์ฟเวอร์ ตรวจกับบัญชีในไฟล์นี้แทน */
+    const key=id.toLowerCase();
+    const u=USERS.find(x=>String(x.email||"").toLowerCase()===key)
+          ||USERS.find(x=>String(x.code||"").toLowerCase()===key);
+    S.pinBusy=false; S.pin="";
+    if(!u||!u.pin||String(u.pin)!==pin){
+      S.pinErr=true; S.pinMsg="ชื่อผู้ใช้หรือรหัส PIN ไม่ถูกต้อง"; render(); return;
+    }
+    if(u.status&&u.status!=="active"){ S.pinErr=true; S.pinMsg="บัญชีนี้ถูกระงับการใช้งาน"; render(); return; }
+    pinIdSet(id);
+    S.user=u; S.role=u.roles[0]; S.page="dashboard"; S.err=""; S.pinMsg=""; S.pinErr=false; render();
+  }catch(e){
+    S.pinBusy=false; S.pin=""; S.pinErr=true;
+    S.pinMsg=(e&&e.message)||"เข้าสู่ระบบด้วยรหัส PIN ไม่สำเร็จ";
+    render();
+  }
 }
 
 /** ขั้นตอนตั้งรหัส PIN · ครั้งแรกจำไว้ ครั้งที่สองต้องตรงกันจึงจะบันทึก */
@@ -1849,18 +1816,37 @@ async function pinSetStep(){
     S.pin=""; S.pinStage=1; S.pinFirst=""; S.pinErr=true;
     S.pinMsg="รหัสทั้งสองครั้งไม่ตรงกัน กรุณาตั้งใหม่อีกครั้ง"; render(); return;
   }
-  S.pinBusy=true; S.pinMsg="กำลังบันทึก…"; render();
+  S.pinBusy=true; S.pinMsg="กำลังบันทึกลงฐานข้อมูล…"; render();
   try{
-    const u=myUser();
-    await pinSetup(pin,u.email,S.pinPw,u.name);
+    const me=pinSelf();
+    const at=new Date().toISOString().slice(0,10);
+    if(LIVE.on){
+      await API.call("auth.setPin",{password:S.pinPw,pin:pin});
+      me.forEach(u=>{ u.hasPin=true; u.pinSetAt=at; });
+    } else {
+      if(S.pinPw!==(me[0].pw||PASSWORD)) throw new Error("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+      me.forEach(u=>{ u.pin=pin; u.hasPin=true; u.pinSetAt=at; });
+    }
     S.pinSet=false; S.pinStage=1; S.pin=""; S.pinFirst=""; S.pinPw="";
     S.pinBusy=false; S.pinMsg=""; S.pinErr=false; S.pinCardErr=false;
-    S.pinCardMsg="ตั้งรหัส PIN เรียบร้อยแล้ว ครั้งต่อไปเข้าสู่ระบบด้วยรหัส PIN ได้ทันที";
+    S.pinCardMsg="ตั้งรหัส PIN เรียบร้อยแล้ว ใช้เข้าระบบได้จากทุกอุปกรณ์";
   }catch(e){
     S.pinBusy=false; S.pin=""; S.pinStage=1; S.pinFirst=""; S.pinErr=true;
-    S.pinMsg="บันทึกรหัส PIN ไม่สำเร็จ ("+((e&&e.message)||"")+")";
+    S.pinMsg=pinErrMsg(e,"บันทึกรหัส PIN ไม่สำเร็จ");
   }
   render();
+}
+
+/** ยกเลิกรหัส PIN ของบัญชี มีผลกับทุกอุปกรณ์ */
+async function pinRemove(){
+  const me=pinSelf();
+  S.pinBusy=true; render();
+  try{
+    if(LIVE.on) await API.call("auth.clearPin",{});
+    me.forEach(u=>{ u.hasPin=false; delete u.pin; u.pinSetAt=""; });
+    S.pinCardErr=false; S.pinCardMsg="ยกเลิกรหัส PIN แล้ว ทุกอุปกรณ์จะใช้รหัส PIN เข้าระบบไม่ได้อีก";
+  }catch(e){ S.pinCardErr=true; S.pinCardMsg=pinErrMsg(e,"ยกเลิกรหัส PIN ไม่สำเร็จ"); }
+  finally{ S.pinBusy=false; render(); }
 }
 
 /** แป้นกรอกรหัส PIN ใช้ร่วมกันทั้งหน้าเข้าสู่ระบบและหน้าตั้งค่า */
@@ -1893,21 +1879,24 @@ function loginView(){
     <button class="btn btn-primary" data-act="otp">ยืนยันและเข้าสู่ระบบ</button>
     <div class="linkrow"><button class="linkbtn" data-act="otpback">ย้อนกลับ</button></div>
     ${themeCard()}</div></div></div>`;
-  /* เครื่องที่ตั้งรหัส PIN ไว้แล้ว ให้กรอก PIN เป็นทางหลัก เพราะเร็วกว่าพิมพ์อีเมลกับรหัสผ่านมาก
-     ยังสลับไปใช้รหัสผ่านได้ตลอด เผื่อจำ PIN ไม่ได้หรือต้องการเข้าด้วยบัญชีอื่น */
-  if(pinHas()&&S.authMode!=="password"){
-    const o=pinRead()||{};
+  /* หน้ากรอกรหัส PIN · ใช้ได้กับทุกอุปกรณ์ จึงต้องระบุบัญชีมาด้วยเสมอ
+     เครื่องที่เคยเข้าจะกรอกชื่อผู้ใช้ให้ล่วงหน้า เหลือแค่กดตัวเลขหกหลัก */
+  if(S.authMode==="pin"){
+    if(S.pinId===undefined||S.pinId===null) S.pinId=pinIdGet();
     return `<div class="auth">${authArt()}<div class="auth-panel"><div class="auth-form">
       <h2>เข้าสู่ระบบด้วยรหัส PIN</h2>
-      <p class="auth-sub">${o.name?esc(o.name):"บัญชีที่ตั้งรหัส PIN ไว้ในเครื่องนี้"}${o.hint?" · "+esc(o.hint):""}</p>
+      <p class="auth-sub">ใช้ได้ทุกอุปกรณ์ · ตั้งรหัส PIN ไว้ที่ โปรไฟล์ของฉัน › ความปลอดภัย</p>
       ${S.notice?`<div class="alert alert-ok">${esc(S.notice)}</div>`:""}
       ${S.err?`<div class="alert alert-err">${esc(S.err)}</div>`:""}
+      <div class="field"><label for="pin_id">ชื่อผู้ใช้หรืออีเมล</label>
+        <input class="inp" id="pin_id" value="${esc(S.pinId||"")}" placeholder="name@ptru.ac.th"
+          autocomplete="username" data-act="pinid" data-nore></div>
       ${pinPad("กรอกรหัส PIN 6 หลัก",
         S.pinMsg||(S.pinBusy?"กำลังตรวจสอบและเข้าสู่ระบบ…":"กรอกครบ 6 หลักแล้วระบบจะเข้าสู่ระบบให้อัตโนมัติ"),
         S.pinErr)}
       <div class="linkrow" style="margin-top:1.1rem">
         <button class="linkbtn" data-act="authmode" data-v="password">เข้าสู่ระบบด้วยรหัสผ่าน</button>
-        <button class="linkbtn" data-act="pinforget">ลบรหัส PIN ของเครื่องนี้</button>
+        ${pinIdGet()?`<button class="linkbtn" data-act="pinforget">ลืมชื่อผู้ใช้ที่จำไว้</button>`:""}
       </div>
       ${themeCard()}
     </div></div></div>`;
@@ -1916,13 +1905,13 @@ function loginView(){
   return `<div class="auth">${authArt()}<div class="auth-panel"><div class="auth-form">
     <h2>เข้าสู่ระบบ</h2><p class="auth-sub">ใช้บัญชีของมหาวิทยาลัย หรือบัญชีที่ได้รับอนุมัติสำหรับครูพี่เลี้ยง</p>
     ${S.notice?`<div class="alert alert-ok">${esc(S.notice)}</div>`:""}
-    ${pinHas()?`<div class="linkrow" style="margin:0 0 .8rem">
-      <button class="linkbtn" data-act="authmode" data-v="pin">← กลับไปใช้รหัส PIN</button></div>`:""}
     <div class="field"><label for="em">อีเมล</label><input class="inp" id="em" type="email" placeholder="name@ptru.ac.th" data-nore></div>
     <div class="field"><label for="pw">รหัสผ่าน</label><input class="inp" id="pw" type="password" data-nore></div>
     ${S.err?`<div class="alert alert-err">${esc(S.err)}</div>`:""}
     <button class="btn btn-primary" data-act="login">เข้าสู่ระบบ</button>
-    <div class="linkrow"><button class="linkbtn" data-act="go" data-v="forgot">ลืมรหัสผ่าน</button></div>
+    <div class="linkrow">
+      <button class="linkbtn" data-act="authmode" data-v="pin">เข้าสู่ระบบด้วยรหัส PIN 6 หลัก</button>
+      <button class="linkbtn" data-act="go" data-v="forgot">ลืมรหัสผ่าน</button></div>
     <div class="reg2"><button class="btn btn-ghost" data-act="go" data-v="register">สมัครสมาชิกใหม่</button>
       <div class="hint" style="text-align:center;margin-top:.35rem">
         ${REG_KINDS.map(k=>esc(k[1])).join(" · ")}</div></div>
@@ -3163,15 +3152,11 @@ function pfSecurity(u){
     </div></div>`;
 }
 
-/** ตั้งหรือลบรหัส PIN ของเครื่องนี้
-    ต้องกรอกรหัสผ่านปัจจุบันด้วย เพราะรหัสผ่านคือสิ่งที่ถูกเข้ารหัสเก็บไว้
-    และเป็นการยืนยันตัวตนก่อนผูก PIN กับเครื่อง กันคนอื่นมาตั้ง PIN บนเครื่องที่เปิดค้างไว้ */
+/** ตั้งหรือลบรหัส PIN ของบัญชี
+    รหัส PIN ผูกกับบัญชีไม่ใช่กับเครื่อง จึงใช้เข้าระบบได้จากทุกอุปกรณ์
+    ต้องกรอกรหัสผ่านปัจจุบันเพื่อยืนยันตัวตนก่อน กันคนอื่นมาตั้ง PIN บนเครื่องที่เปิดค้างไว้ */
 function pfPinCard(u){
-  const has=pinHas(), o=pinRead()||{};
-  if(!pinSupported())
-    return card("เข้าใช้เร็วด้วยรหัส PIN","",
-      `<div class="notebox" style="margin:0">เบราว์เซอร์นี้ใช้รหัส PIN ไม่ได้
-        เพราะต้องเปิดหน้าเว็บผ่าน https หรือ localhost จึงจะเข้ารหัสข้อมูลได้อย่างปลอดภัย</div>`);
+  const has=pinHasNow(), at=pinSetAtNow();
 
   if(S.pinSet){
     const step2=(S.pinStage||1)===2;
@@ -3183,24 +3168,24 @@ function pfPinCard(u){
   }
 
   return card("เข้าใช้เร็วด้วยรหัส PIN",
-    has?"เครื่องนี้ตั้งรหัส PIN ไว้แล้ว":"ตั้งครั้งเดียว แล้วครั้งต่อไปกดตัวเลข 6 หลักเข้าระบบได้เลย",
+    has?"บัญชีนี้ตั้งรหัส PIN ไว้แล้ว":"ตั้งครั้งเดียว แล้วครั้งต่อไปกดตัวเลข 6 หลักเข้าระบบได้เลย",
     `${has
       ? `<div class="alert alert-ok" style="margin-top:0"><b>ตั้งรหัส PIN ไว้แล้ว</b>
-          ${o.name?"<br>บัญชี "+esc(o.name):""}${o.hint?" · "+esc(o.hint):""}
-          ${o.at?"<br>ตั้งเมื่อ "+esc(String(o.at).slice(0,10)):""}</div>`
+          <br>บัญชี ${esc(u.name)}${u.email?" · "+esc(u.email):""}
+          ${at?"<br>ตั้งเมื่อ "+esc(at.slice(0,10)):""}</div>`
       : ""}
      <div class="field" style="margin-top:0"><label for="pin_pw">รหัสผ่านปัจจุบัน</label>
        <input class="inp" id="pin_pw" type="password" autocomplete="current-password" data-nore>
-       <div class="hint">ใช้ยืนยันตัวตนก่อนผูกรหัส PIN กับเครื่องนี้</div></div>
+       <div class="hint">ใช้ยืนยันตัวตนก่อนตั้งรหัส PIN ของบัญชี</div></div>
      ${S.pinCardMsg?`<div class="alert ${S.pinCardErr?"alert-err":"alert-ok"}">${esc(S.pinCardMsg)}</div>`:""}
-     <div class="notebox" style="margin-bottom:0">รหัส PIN ไม่ถูกส่งออกจากเครื่องและไม่ได้เก็บไว้ที่ใด
-       ระบบเก็บเฉพาะข้อมูลเข้าสู่ระบบที่เข้ารหัสด้วยกุญแจซึ่งสร้างจากรหัส PIN ของท่าน
-       (PBKDF2 ${PIN_ITER.toLocaleString()} รอบ ตามด้วย AES-GCM)
-       <br>กรอกผิดครบ ${PIN_MAX_TRY} ครั้ง ระบบจะลบข้อมูลที่เก็บไว้ทิ้งเอง
-       <br>ใช้ได้เฉพาะเครื่องนี้ ไม่มีผลกับอุปกรณ์อื่น</div>`,
+     <div class="notebox" style="margin-bottom:0">รหัส PIN ผูกกับบัญชีไม่ใช่กับเครื่อง จึงใช้เข้าระบบได้จากทุกอุปกรณ์
+       เวลาเข้าระบบจึงต้องกรอกชื่อผู้ใช้หรืออีเมลมาด้วยเสมอ
+       <br>ระบบเก็บเฉพาะค่าที่แปลงจากรหัส PIN แบบทางเดียว ไม่ได้เก็บตัวเลขที่ท่านตั้ง
+       <br>กรอกผิดครบ 5 ครั้ง บัญชีถูกล็อก 30 นาที นับรวมกับการเข้าสู่ระบบด้วยรหัสผ่าน
+       <br>เพราะใช้ได้ทุกอุปกรณ์ จึงไม่ควรตั้งเป็นวันเกิดหรือเลขที่ผู้อื่นเดาได้</div>`,
     `<div class="row">
        <button class="btn btn-primary btn-sm" data-act="pinsetstart">${has?"ตั้งรหัส PIN ใหม่":"ตั้งรหัส PIN"}</button>
-       ${has?`<button class="btn btn-danger btn-sm" data-act="pinremove">ลบรหัส PIN ของเครื่องนี้</button>`:""}
+       ${has?`<button class="btn btn-danger btn-sm" data-act="pinremove">ลบรหัส PIN ของบัญชี</button>`:""}
      </div>`);
 }
 
@@ -8658,7 +8643,11 @@ document.addEventListener("click",e=>{
       if(u.roles.some(r=>["Administrator","Dean","Program Chair"].includes(r))){S.otpUser=u;break;}
       S.user=u; S.role=u.roles[0]; S.page="dashboard"; break; }
     /* --- รหัส PIN --- */
-    case "authmode": S.authMode=v; S.pin=""; S.pinMsg=""; S.pinErr=false; S.err=""; break;
+    case "authmode":
+      S.authMode=v; S.pin=""; S.pinMsg=""; S.pinErr=false; S.err="";
+      /* ถ้าพิมพ์อีเมลไว้แล้วค่อยกดไปหน้ารหัส PIN ให้ยกค่านั้นไปด้วย จะได้ไม่ต้องพิมพ์ซ้ำ */
+      if(v==="pin"&&!String(S.pinId||"").trim()) S.pinId=val("em").trim()||pinIdGet();
+      break;
     case "pind": {
       if(S.pinBusy){ re=false; break; }
       if((S.pin||"").length>=PIN_LEN){ re=false; break; }
@@ -8678,12 +8667,12 @@ document.addEventListener("click",e=>{
       S.pinSet=false; S.pinStage=1; S.pin=""; S.pinFirst=""; S.pinPw="";
       S.pinMsg=""; S.pinErr=false; break;
     case "pinremove":
-      if(!confirm("ลบรหัส PIN ของเครื่องนี้?\n\nครั้งต่อไปต้องเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน")){ re=false; break; }
-      pinClear(); S.pinCardErr=false; S.pinCardMsg="ลบรหัส PIN ของเครื่องนี้แล้ว"; break;
+      if(!confirm("ลบรหัส PIN ของบัญชีนี้?\n\nจะเข้าระบบด้วยรหัส PIN จากอุปกรณ์ใดไม่ได้อีก ต้องใช้อีเมลและรหัสผ่าน")){ re=false; break; }
+      pinRemove(); re=false; break;
+    /* ลืมเฉพาะชื่อผู้ใช้ที่จำไว้ในเครื่องนี้ ไม่แตะรหัส PIN ของบัญชี */
     case "pinforget":
-      if(!confirm("ลบรหัส PIN ของเครื่องนี้?\n\nครั้งต่อไปต้องเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน")){ re=false; break; }
-      pinClear(); S.authMode="password"; S.pin=""; S.pinMsg="";
-      S.notice="ลบรหัส PIN ของเครื่องนี้แล้ว"; break;
+      pinIdClear(); S.pinId=""; S.pin=""; S.pinMsg=""; S.pinErr=false;
+      S.notice="ลบชื่อผู้ใช้ที่จำไว้ในเครื่องนี้แล้ว รหัส PIN ของบัญชียังใช้ได้ตามปกติ"; break;
 
     case "otp": { if(val("otp")==="246810"){S.user=S.otpUser;S.role=S.otpUser.roles[0];S.otpUser=null;S.err="";S.page="dashboard";}
       else S.err="รหัสยืนยันไม่ถูกต้อง รหัสมีอายุ 5 นาที"; break; }
@@ -9338,6 +9327,9 @@ document.addEventListener("input",e=>{
     case "itemtc": { const it=findItem(v); if(it){it.tC=clamp(+val2||0,0,0.5);it.custom=true;scheduleItemSave(it.id);} break; }
     case "itemtd": { const it=findItem(v); if(it){it.tD=clamp(isNaN(+val2)?1:+val2,0.5,1);it.custom=true;scheduleItemSave(it.id);} break; }
     case "usrq": S.usrFilter.q=val2; clearTimeout(window.__q); window.__q=setTimeout(render,300); break;
+    /* เก็บชื่อผู้ใช้ของหน้ารหัส PIN ไว้เฉย ๆ ไม่ render ใหม่ เพราะแป้นตัวเลขอยู่ใต้ช่องนี้
+       ถ้าวาดใหม่ทุกตัวอักษร เคอร์เซอร์จะเด้งกลับต้นช่อง */
+    case "pinid": S.pinId=val2; if(S.pinErr){S.pinErr=false;S.pinMsg="";} break;
     case "evtitle": S.evNew.title=val2; break;
     case "evlink": S.evNew.link=val2.trim(); break;
     case "fwylabel":
@@ -9583,6 +9575,7 @@ function mapUser(u) {
     tel: u.phone || '', group: u.subject_group || '', teachLevel: u.teach_level || '',
     exp: (u.experience_years === '' || u.experience_years == null) ? '' : String(u.experience_years),
     photo: u.photo_url || undefined,
+    hasPin: !!u.has_pin, pinSetAt: String(u.pin_set_at || ''),
     live: true,
     evidence: null, ontime: null,   // ยังไม่มีข้อมูลพฤติกรรมในชีต ดูหมายเหตุในหน้าแบบจำลองความเสี่ยง
   };
@@ -10184,8 +10177,13 @@ async function liveSyncAll(force) {
   render();
 }
 
-/*───────── 21.8 การเข้าสู่ระบบด้วยบัญชีจริง ─────────*/
-async function liveLogin(email, pw) {
+/*───────── 21.8 การเข้าสู่ระบบด้วยบัญชีจริง ─────────
+   ใช้ร่วมกันทั้งการเข้าด้วยรหัสผ่านและด้วยรหัส PIN 6 หลัก
+   ต่างกันเฉพาะคำสั่งที่เรียกเท่านั้น ขั้นตอนหลังยืนยันตัวตนเหมือนกันทุกประการ
+   จึงไม่ต้องดูแลสองเส้นทางที่ค่อย ๆ เพี้ยนจากกัน */
+async function liveLogin(email, pw, pin) {
+
+  const byPin = !!pin;
 
   liveBusy(1);
 
@@ -10202,11 +10200,9 @@ async function liveLogin(email, pw) {
   try {
 
     /* 1. Authentication */
-    const r = await API.call('auth.login', {
-      email,
-      password: pw,
-      ua: navigator.userAgent
-    });
+    const r = byPin
+      ? await API.call('auth.loginPin', {login: email, pin: pin, ua: navigator.userAgent})
+      : await API.call('auth.login', {email, password: pw, ua: navigator.userAgent});
     loaderSet(45, 'ยืนยันตัวตนสำเร็จ กำลังเตรียมสิทธิ์การใช้งาน');
 
     /* คำตอบต้องมีข้อมูลบัญชีเสมอ ถ้าไม่มีแปลว่าคำตอบผิดรูป
@@ -10225,10 +10221,15 @@ async function liveLogin(email, pw) {
 
     /* 3. User */
     const u = mapUser(r.user);
+    if (!u) throw new Error('ข้อมูลบัญชีที่ได้รับไม่สมบูรณ์ กรุณาลองใหม่อีกครั้ง');
 
     if (Array.isArray(r.roles) && r.roles.length) {
       u.roles = r.roles.filter(Boolean);
     }
+
+    /* จำชื่อผู้ใช้ไว้ให้เครื่องนี้กรอกล่วงหน้าในครั้งถัดไป
+       เก็บเฉพาะเมื่อเข้าด้วยรหัส PIN สำเร็จ ค่านี้ไม่ใช่ความลับและไม่ใช่ตัวรหัส */
+    if (byPin) pinIdSet(email);
 
     /* 4. ตั้งค่า Session */
     LIVE.session = true;
