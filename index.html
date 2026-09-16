@@ -221,7 +221,7 @@ tbody tr:last-child td{border-bottom:none}
   background:var(--accent-soft);color:var(--accent-fg);font-size:1.25rem}
 .asw-ttl{font-weight:600;font-size:.96rem;line-height:1.3}
 .asw-sub{font-size:.78rem;color:var(--muted);margin-top:.1rem}
-.asw-prog{margin-left:auto;display:flex;align-items:center;gap:.7rem;min-width:min(280px,100%)}
+.asw-prog{margin-left:auto;display:flex;align-items:center;gap:.7rem;min-width:min(220px,100%)}
 .asw-bar{flex:1;height:.5rem;border-radius:999px;background:var(--line-soft);overflow:hidden}
 .asw-bar i{display:block;height:100%;border-radius:999px;background:var(--ok);transition:width .25s ease}
 .asw-pct{font-size:.78rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -251,6 +251,9 @@ tbody tr:last-child td{border-bottom:none}
 
 .asw-foot{margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--line-soft);
   display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+/* ปุ่มก่อนหน้า ถัดไป และบันทึก ติดขอบล่างของจอเมื่อแบบประเมินสูงกว่าจอ
+   บนจอโน้ตบุ๊กหรือแท็บเล็ตที่เตี้ย ปุ่มบันทึกจึงกดได้ทันทีโดยไม่ต้องเลื่อนหา */
+.asw-foot{position:sticky;bottom:0;z-index:5;background:var(--surface);padding-bottom:.6rem;margin-bottom:-.6rem}
 .asw-foot .mid{margin:0 auto;display:flex;gap:.9rem;flex-wrap:wrap;justify-content:center;
   font-size:.78rem;color:var(--muted)}
 .asw-dots{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.85rem}
@@ -261,6 +264,92 @@ tbody tr:last-child td{border-bottom:none}
 /* สัดส่วนสองคอลัมน์ของหน้าประเมิน เดิมกำหนดเป็น inline style จึงชนะกฎของจอแคบเสมอ
    ทำให้บนมือถือยังถูกบีบเป็นสองคอลัมน์และหน้าจอเลื่อนออกด้านข้าง */
 .as-cols{grid-template-columns:1.7fr 1fr;align-items:start}
+
+/* ---------- หน้าประเมินแบบสามขั้นตอน ----------
+   เดิมทุกส่วนวางต่อกันในหน้าเดียว และตารางสมรรถนะที่ประเมินแล้วยาวกว่าพันห้าร้อยพิกเซลคั่นอยู่ก่อนแบบประเมิน
+   ผู้ประเมินต้องเลื่อนผ่านตารางนั้นทุกครั้งกว่าจะถึงข้อที่ต้องให้คะแนน
+   แบบใหม่แยกเป็น 1 ตั้งค่า → 2 ทำแบบประเมิน → 3 ดูสิ่งที่ประเมินแล้ว แสดงครั้งละหนึ่งขั้น
+   แถบขั้นตอนติดอยู่ด้านบนเสมอแม้เลื่อนหน้าจอ จึงเห็นว่าอยู่ขั้นไหนและแต่ละขั้นคืบหน้าไปเท่าไร */
+.asx-steps{position:sticky;top:0;z-index:30;display:flex;align-items:stretch;gap:.35rem;margin:0 0 1rem;
+  padding:.5rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 8px 18px -14px rgba(0,0,0,.5)}
+.asx-step{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:.65rem;padding:.5rem .75rem;
+  border:1.5px solid transparent;border-radius:8px;background:none;text-align:left;color:var(--muted)}
+.asx-step:hover{background:var(--line-soft)}
+.asx-step .no{width:2.1rem;height:2.1rem;border-radius:50%;flex:none;display:grid;place-items:center;
+  border:1.5px solid var(--line);background:var(--surface-2);color:var(--muted);font-weight:700;font-size:.92rem;
+  font-variant-numeric:tabular-nums}
+.asx-step .tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.asx-step .tx b{font-size:.87rem;font-weight:600;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asx-step .tx small{font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asx-step .sm{display:none}
+.asx-step .mini{display:block;height:.26rem;border-radius:999px;background:var(--line-soft);overflow:hidden;margin-top:.32rem}
+.asx-step .mini i{display:block;height:100%;border-radius:999px;background:var(--ok);transition:width .25s ease}
+.asx-step.done .no{background:var(--ok);border-color:var(--ok);color:#fff}
+.asx-step.done .tx b{color:var(--text)}
+.asx-step.cur{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-fg)}
+.asx-step.cur .no{background:var(--accent);border-color:var(--accent);color:#fff}
+.asx-step.cur .tx b{color:var(--accent-fg)}
+.asx-arr{flex:none;align-self:center;color:var(--muted);font-size:1.05rem;line-height:1}
+
+.asx-setup{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem;align-items:start}
+.asx-setup .field:first-child{margin-top:0}
+.asx-scope{margin-top:.9rem;font-size:.78rem;color:var(--muted)}
+.asx-tip{margin-top:.8rem;padding:.5rem .7rem;border-radius:6px;background:var(--surface-2);border:1px dashed var(--line);
+  font-size:.8rem;color:var(--text-soft);display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}
+.asx-actions{margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--line-soft);
+  display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.asx-actions .btn{width:auto;margin-top:0}
+.asx-actions .grow{margin-left:auto}
+.asx-who{display:flex;gap:.8rem;align-items:center;min-width:0}
+.asx-who .nm{font-weight:600;overflow-wrap:anywhere}
+.asx-av{width:2.9rem;height:2.9rem;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;
+  background:var(--accent-soft);color:var(--accent-fg);border:1px solid var(--accent);font-weight:600;font-size:1.05rem}
+.asx-av img{width:100%;height:100%;object-fit:cover;display:block}
+.asx-prog{display:flex;align-items:center;gap:.6rem;margin-top:.7rem;font-size:.78rem;color:var(--muted)}
+.asx-prog .bar{flex:1;height:.45rem;border-radius:999px;background:var(--line-soft);overflow:hidden}
+.asx-prog .bar i{display:block;height:100%;border-radius:999px;background:var(--ok);transition:width .25s ease}
+.asx-kv{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--line-soft)}
+.asx-kv .cn{margin-top:.35rem;font-weight:600;line-height:1.45}
+
+/* กล่องพับได้ ใช้กับข้อเสนอแนะและคำแนะนำจากระบบ เพื่อไม่ให้หน้าแบบประเมินยาวเกินจอ */
+.asx-fold{border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.asx-fold>summary{cursor:pointer;list-style:none;padding:.55rem .8rem;font-size:.83rem;font-weight:500;
+  display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;color:var(--text-soft)}
+.asx-fold>summary::-webkit-details-marker{display:none}
+.asx-fold>summary::before{content:"▸";display:inline-block;transition:transform .15s ease;color:var(--muted)}
+.asx-fold[open]>summary::before{transform:rotate(90deg)}
+.asx-fold>.aibox{margin:0 .6rem .6rem;max-height:min(52vh,470px);overflow:auto}
+.asx-fold>.aibox>.lb:first-child{display:none}
+.asw-cmt{margin-top:.85rem;background:var(--surface-2)}
+.asw-cmt textarea{display:block;margin:0 .8rem .8rem;width:calc(100% - 1.6rem);resize:vertical}
+
+.asx-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6rem}
+.asx-stat{padding:.5rem .75rem;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);min-width:0}
+.asx-stat .k{font-size:.74rem;color:var(--muted)}
+.asx-stat .v{font-family:'Noto Serif Thai',serif;font-size:1.22rem;font-weight:600;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asx-stat .bar{display:block;height:.3rem;border-radius:999px;background:var(--line-soft);overflow:hidden;margin-top:.25rem}
+.asx-stat .bar i{display:block;height:100%;border-radius:999px;background:var(--ok)}
+/* รายการสมรรถนะวางสองคอลัมน์และจำกัดความสูงตามจอ ทั้ง 17 รายการจึงอยู่ในหน้าจอเดียว
+   จอเตี้ยกว่านั้นให้เลื่อนเฉพาะในกล่อง หน้าเพจไม่ยาวออกไป */
+.asx-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;margin-top:.9rem;
+  max-height:max(250px,calc(100vh - 430px));overflow:auto;padding:.1rem .15rem .1rem 0;align-content:start}
+.asx-item{display:flex;align-items:center;gap:.65rem;padding:.48rem .6rem;border:1px solid var(--line);
+  border-radius:7px;background:var(--surface);min-width:0}
+.asx-item .ic{width:1.65rem;height:1.65rem;border-radius:50%;flex:none;display:grid;place-items:center;
+  font-size:.8rem;font-weight:700;border:1.5px solid var(--line);color:var(--muted);background:var(--surface-2)}
+.asx-item.done .ic{background:var(--ok);border-color:var(--ok);color:#fff}
+.asx-item.wait .ic{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.asx-item.fail{border-color:var(--risk-line)}
+.asx-item.fail .ic{background:var(--risk-bg);border-color:var(--risk);color:var(--risk)}
+.asx-item.cur{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.asx-item .bd{flex:1;min-width:0}
+.asx-item .t{font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asx-item .m{font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asx-item .btn{flex:none}
+.asx-just{margin-top:0;margin-bottom:1rem;display:flex;gap:.5rem .8rem;align-items:center;flex-wrap:wrap}
+.asx-just .btn{margin-left:auto}
 
 /* ---------- แบบทดสอบวัดสมรรถนะ ทีละข้อ ----------
    แถบซ้ายบอกว่าอยู่ข้อไหนและตอบไปแล้วกี่ข้อ กดข้ามไปข้อที่ต้องการได้
@@ -555,9 +644,6 @@ svg.chart{display:block;width:100%;height:auto}
   .stair .stp{margin-left:calc((var(--h) - 1) * .8rem)}
   .stair .blk{min-height:0}
   .stair .mark{align-items:flex-start;margin-bottom:.25rem}
-  /* จอแคบวางตัวเลือกระดับเป็นสองคอลัมน์ ถ้าเรียงห้าช่องในแถวเดียวข้อความจะบีบจนอ่านไม่ออก
-     ใช้ !important เพราะความกว้างของกริดถูกกำหนดจากจำนวนระดับในโค้ดที่วาดหน้าจอ */
-  .asw-lv{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .as-cols{grid-template-columns:1fr}
   /* จอแคบวางแถบความคืบหน้าไว้บนสุด แล้วเรียงหมายเลขข้อเป็นแถวเลื่อนแนวนอน
      ถ้าคงเป็นคอลัมน์ซ้ายจะกินพื้นที่จนโจทย์เหลือแคบเกินไป */
@@ -567,9 +653,48 @@ svg.chart{display:block;width:100%;height:auto}
   .exw-nav button .tx,.exw-nav button .dot{display:none}
   .exw-art{display:none}
   .exw-ind{margin-left:0;max-width:100%}
-  .asw-prog{margin-left:0;width:100%}
-  .asw-foot .mid{margin:.2rem 0;width:100%;justify-content:flex-start}
   .content,.topbar{padding-left:.9rem;padding-right:.9rem}
+}
+/* จอโทรศัพท์ วางเลขขั้นไว้เหนือชื่อขั้นแบบสั้น สามขั้นจึงอยู่ในแถวเดียวได้โดยไม่ล้นจอ
+   รายการสมรรถนะไม่จำกัดความสูงแล้ว เพราะกล่องเลื่อนซ้อนในหน้าที่เลื่อนอยู่แล้วใช้นิ้วลำบาก */
+/* หน้าประเมินคงสองคอลัมน์ไว้ถึงจอแท็บเล็ตแนวนอน (1024 พิกเซล) ซึ่งยังกว้างพอ
+   กฎรวมของจอแคบกว่า 1040 พิกเซลยุบทุกกริดเป็นคอลัมน์เดียว ทำให้แต่ละขั้นยาวเกินจอโดยไม่จำเป็น */
+@media (min-width:981px){
+  .grid.as-cols{grid-template-columns:1.7fr 1fr}
+}
+@media (max-width:860px){
+  .asx-setup{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .asx-list{grid-template-columns:1fr}
+  .asw-prog{margin-left:0;width:100%}
+  /* แถบปุ่มที่ติดขอบล่างต้องเป็นแถวเดียว ถ้าซ้อนสามแถวจะบังหน้าจอโทรศัพท์ไปเกือบหนึ่งในสี่
+     ข้อความจำนวนข้อที่ตอบแล้วซ่อนไว้ เพราะหัวแบบประเมินและแถบขั้นตอนบอกอยู่แล้ว */
+  .asw-foot{flex-wrap:nowrap;gap:.5rem}
+  .asw-foot .mid{display:none}
+  .asw-foot .btn{flex:1 1 0;min-width:0;padding-left:.5rem;padding-right:.5rem}
+  /* ยกปุ่มผู้ช่วยอัจฉริยะขึ้นเหนือแถบปุ่มของแบบประเมิน ไม่ให้บังปุ่มถัดไปหรือปุ่มบันทึก
+     ถ้าผู้ใช้ลากปุ่มไปไว้ที่อื่นเอง ตำแหน่งที่ลากไว้เป็นค่าในแอตทริบิวต์ style ซึ่งมีผลเหนือกฎนี้ */
+  body.asx-pad #aiwrap{bottom:4.9rem}
+  /* จอแคบวางตัวเลือกระดับเป็นสองคอลัมน์ ถ้าเรียงห้าช่องในแถวเดียวข้อความจะบีบจนอ่านไม่ออก
+     ใช้ !important เพราะความกว้างของกริดถูกกำหนดจากจำนวนระดับในโค้ดที่วาดหน้าจอ */
+  .asw-lv{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media (max-width:640px){
+  .asx-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .asx-steps{gap:.1rem;padding:.35rem;border-radius:8px}
+  .asx-step{flex-direction:column;gap:.22rem;padding:.35rem .15rem;text-align:center}
+  .asx-step .tx{align-items:center;width:100%}
+  .asx-step .tx b{font-size:.8rem}
+  .asx-step .tx small{font-size:.7rem}
+  .asx-step .lg{display:none}
+  .asx-step .sm{display:inline}
+  .asx-step .mini{width:70%;margin-left:auto;margin-right:auto}
+  .asx-step .no{width:1.8rem;height:1.8rem;font-size:.82rem}
+  .asx-arr{font-size:.85rem}
+  .asx-list{max-height:none;overflow:visible}
+  .asx-actions .grow{margin-left:0;width:100%}
+  .asx-just .btn{margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -1430,6 +1555,10 @@ const S={
   /* แบบประเมินทีละข้อ · asIdx ข้อที่กำลังแสดง · asKey คีย์แบบร่างของชุดที่กำลังประเมิน
      asDraftAt เวลาบันทึกแบบร่างล่าสุด · asRestored เพิ่งเรียกแบบร่างกลับมาหรือไม่ */
   asIdx:0, asKey:null, asDraftAt:"", asComment:"", asRestored:false,
+  /* หน้าประเมินสามขั้นตอน · asStep ขั้นที่แสดงอยู่ (1 ตั้งค่า 2 ทำแบบประเมิน 3 ดูที่ประเมินแล้ว)
+     asFilter ตัวกรองรายการในขั้นที่ 3 · asJust ชุดที่เพิ่งกดบันทึก ใช้แสดงแถบแจ้งผลในขั้นที่ 3
+     asAiOpen/asCmtOpen จำว่ากล่องพับเปิดอยู่หรือไม่ · asOwner บัญชีที่ตั้งค่าหน้านี้ไว้ */
+  asStep:1, asFilter:"all", asJust:null, asAiOpen:null, asCmtOpen:false, asOwner:"",
   msg:"", err:"", notice:"",
   forgotSent:false, otpUser:null,
   /* ระบบสมัครสมาชิกชุดเดียว ใช้สถานะก้อนเดียวแทนของเดิมที่แยกเป็น reg* กับ stu* คนละชุด */
@@ -4322,9 +4451,72 @@ function assessedByMe(sid){
     if(String(a.assessor_id)!==uid) return;
     const prev=out[a.comp_id];
     if(!prev||String(a.date)>String(prev.date)||a.round_no>prev.round)
-      out[a.comp_id]={date:a.date,round:a.round_no,n:a.n_items,type:a.type};
+      out[a.comp_id]={date:a.date,round:a.round_no,n:a.n_items,type:a.type,state:"saved"};
+  });
+  /* ผลที่เพิ่งกดบันทึกในเครื่องนี้และเซิร์ฟเวอร์ยังไม่ยืนยัน ทับค่าจากฐานข้อมูลไว้ก่อน
+     เพราะเป็นข้อมูลที่ใหม่กว่า และมีสถานะบอกว่ากำลังบันทึกหรือส่งไม่สำเร็จ */
+  const loc=AS_LOCAL[sid]||{};
+  Object.keys(loc).forEach(cid=>{
+    const L=loc[cid];
+    if(!L||String(L.by)!==uid) return;
+    out[cid]={date:L.date,round:L.round,n:L.n,type:L.type,v:L.v,state:L.state};
   });
   return out;
+}
+
+/** ผลที่เพิ่งกดบันทึกในเครื่องนี้ ระหว่างรอเซิร์ฟเวอร์ยืนยัน
+    Apps Script ตอบช้าหลายวินาที ถ้ารอดึงข้อมูลใหม่ให้เสร็จก่อน ขั้นที่ 3 จะยังขึ้นว่ายังไม่ได้ประเมิน
+    ผู้ประเมินจะเข้าใจว่าบันทึกไม่ติดแล้วกดซ้ำ จึงแสดงผลชั่วคราวพร้อมสถานะไว้ก่อน
+    เก็บแยกจาก ASSESS_LOG เพื่อไม่ให้หน้าวิเคราะห์อื่นนับรายการที่เซิร์ฟเวอร์ยังไม่ยืนยัน
+    เก็บคะแนนครบทุกข้อไว้ด้วย ถ้าส่งไม่สำเร็จจะกดส่งซ้ำได้โดยไม่ต้องให้คะแนนใหม่
+    โครงสร้าง {รหัสนักศึกษา: {รหัสสมรรถนะ: {state, by, date, round, n, v, type, scores, comment}}}
+    state คือ saving กำลังส่ง · failed ส่งไม่สำเร็จ · saved เซิร์ฟเวอร์รับแล้ว · demo โหมดสาธิต */
+const AS_LOCAL={};
+const asLocalGet=(sid,cid)=>(AS_LOCAL[sid]||{})[cid]||null;
+function asLocalSet(sid,cid,o){ (AS_LOCAL[sid]=AS_LOCAL[sid]||{})[cid]=o; }
+function asLocalDrop(sid,cid){ if(AS_LOCAL[sid]) delete AS_LOCAL[sid][cid]; }
+
+/** รอบที่ใช้บันทึกผล ต้องตรงกับค่าที่ส่งขึ้นเซิร์ฟเวอร์ จึงใช้ liveRound เมื่อเชื่อมต่อฐานข้อมูล */
+function asRoundOf(sid){
+  if(typeof liveOn==="function"&&liveOn()&&typeof liveRound==="function") return liveRound(sid);
+  const r=(ASSESS_LOG[sid]||[]).map(a=>Number(a.round_no)||1);
+  return r.length?Math.max.apply(null,r):1;
+}
+
+/** สมรรถนะถัดไปที่ยังไม่ได้ประเมิน นับต่อจากตัวที่เลือกอยู่ แล้ววนกลับไปต้นรายการ
+    ปุ่ม "ประเมินสมรรถนะถัดไป" จึงพาไปข้างหน้าเสมอ ไม่เด้งกลับไปข้อแรกที่อาจตั้งใจข้ามไว้ */
+function asNextTodo(comps,mine,curId){
+  const i0=comps.findIndex(x=>x.id===curId);
+  const order=i0<0?comps:comps.slice(i0+1).concat(comps.slice(0,i0+1));
+  return order.find(x=>!mine[x.id])||null;
+}
+
+/** เปลี่ยนขั้นของหน้าประเมิน แล้วเลื่อนกลับขึ้นบนสุด
+    ขั้นใหม่ต้องเริ่มที่หัวของมันเสมอ ถ้าค้างตำแหน่งเลื่อนของขั้นก่อนไว้ ผู้ใช้จะเห็นกลางหน้าแล้วหลง */
+function asGoStep(k){
+  S.asStep=clamp(Math.round(numOr(k,1)),1,3);
+  requestAnimationFrame(()=>{ try{ window.scrollTo({top:0,behavior:"auto"}); }catch(e){ window.scrollTo(0,0); } });
+}
+
+/** ส่งผลการประเมินที่ค้างในเครื่องขึ้นฐานข้อมูลอีกครั้ง ใช้เมื่อครั้งก่อนส่งไม่สำเร็จ */
+function asRetry(cid){
+  const sid=S.asSid, L=asLocalGet(sid,cid);
+  if(!L||!(typeof liveOn==="function"&&liveOn())) return;
+  L.state="saving"; S.asJust={sid,comp:cid}; render();
+  asLivePush({sid,comp:cid,type:L.type,scores:L.scores,comment:L.comment,round:L.round});
+}
+
+const TH_MON=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+/** วันที่แบบไทยอย่างย่อจากสตริง ปปปป-ดด-วว เช่น 28 ส.ค. 2569 */
+function thaiDate(iso){
+  const s=String(iso||""), m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if(!m) return s||"—";
+  return `${+m[3]} ${TH_MON[+m[2]-1]||""} ${+m[1]+543}`;
+}
+/** วันที่ตามเวลาเครื่อง ไม่ใช้ toISOString เพราะเป็นเวลาสากล ช่วงเช้ามืดของไทยจะได้วันที่ของเมื่อวาน */
+function localISODate(d){
+  d=d||new Date(); const p=x=>String(x).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
 }
 /** ชุดสมรรถนะที่เปิดใช้ของชั้นปีนี้ ตามที่ผู้ดูแลตั้งค่าไว้
     ผู้ประเมินจึงรู้ว่าแบบประเมินที่เห็นมาจากการตั้งค่าใด และตรงกับที่ผู้ดูแลเห็นในหน้าตั้งค่า */
@@ -4358,40 +4550,81 @@ function yearScopeTable(){
       <th class="num" style="width:110px">เป้าหมายเฉลี่ย</th><th style="width:130px">สถานะ</th>
      </tr></thead><tbody>${rows}</tbody></table>`,"",false);
 }
-/** สรุปให้ผู้ประเมินเห็นว่าตนประเมินสมรรถนะใดไปแล้ว เหลืออีกกี่รายการ
-    ผู้ประเมินจึงไม่ต้องเปิดทีละสมรรถนะเพื่อตรวจว่าทำครบหรือยัง */
-function assessedPanel(st,comps,mine){
-  const done=comps.filter(c=>mine[c.id]);
-  const left=comps.filter(c=>!mine[c.id]);
-  const y=st.year;
-  const rows=comps.map((c,k)=>{
-    const m=mine[c.id];
-    const v=m?compScoreBy(FW,st.id,c,y,(raterByType(m.type)||{}).key):null;
-    return `<tr${m?"":' style="opacity:.62"'}>
-      <td class="sub">${k+1}</td>
-      <td style="font-size:.83rem">${esc(c.th)}<div class="sub">${c.code}</div></td>
-      <td>${m?`<span class="tag tag-ok">ประเมินแล้ว</span>`:`<span class="tag tag-n">ยังไม่ได้ประเมิน</span>`}</td>
-      <td class="num" style="font-weight:600">${m?fmt(v):"—"}</td>
-      <td class="num">${cfgOf(FW,y,c.id).target}</td>
-      <td style="font-size:.8rem">${m?esc(m.date||"—"):"—"}</td>
-      <td class="num">${m?`ครั้งที่ ${m.round}`:"—"}</td>
-      <td class="num">${m?`${m.n} ตัวชี้วัด`:"—"}</td>
-      <td class="num"><button class="btn btn-ghost btn-sm" data-act="ascomp2" data-v="${c.id}">${m?"แก้ไข":"ประเมิน"}</button></td></tr>`;
+/** ขั้นที่ 3 · สมรรถนะที่ท่านประเมินนักศึกษารายนี้แล้ว
+    สรุปว่าประเมินสมรรถนะใดไปแล้ว เหลืออีกกี่รายการ และพาไปประเมินรายการถัดไปได้ในคลิกเดียว
+    วางรายการเป็นสองคอลัมน์แบบกะทัดรัด ทั้ง 17 สมรรถนะจึงอยู่ในจอเดียวโดยไม่ต้องเลื่อนหน้ายาว */
+function asStep3(x){
+  const {st,y,comps,c,mine,isStu}=x;
+  const live=typeof liveOn==="function"&&liveOn();
+  const rows=comps.map((cc,k)=>{
+    const m=mine[cc.id], cf=cfgOf(FW,y,cc.id);
+    const v=!m?null:(m.v!==undefined&&m.v!==null)?m.v
+      :compScoreBy(FW,st.id,cc,y,(raterByType(m.type)||{}).key);
+    const state=!m?"todo":m.state==="saving"?"wait":m.state==="failed"?"fail":"done";
+    return {cc,k,m,v,state,t:cf.target,nI:cf.indicators.length};
+  });
+  const nDone=rows.filter(r=>r.m).length, nLeft=comps.length-nDone;
+  const pct=comps.length?Math.round(nDone/comps.length*100):0;
+  const last=rows.map(r=>r.m&&r.m.date).filter(Boolean).sort().slice(-1)[0]||"";
+  const nx=asNextTodo(comps,mine,c.id);
+  const f=["all","done","todo"].includes(S.asFilter)?S.asFilter:"all";
+  const shown=rows.filter(r=>f==="all"||(f==="done"?!!r.m:!r.m));
+  const nWait=rows.filter(r=>r.state==="wait").length, nFail=rows.filter(r=>r.state==="fail").length;
+
+  const items=shown.map(r=>{
+    const ic={done:"✓",wait:"⏳",fail:"!",todo:""}[r.state];
+    const hit=r.v!==null&&r.v>=r.t;
+    const meta=!r.m
+      ? `ยังไม่ได้ประเมิน · ${r.nI} ตัวชี้วัด · เป้าหมาย ${r.t}`
+      : `คะแนน <b style="color:${hit?"var(--ok)":"var(--warn)"}">${fmt(r.v)}</b> / เป้าหมาย ${r.t}`
+        +` · ${esc(thaiDate(r.m.date))} · ครั้งที่ ${r.m.round}`
+        +(r.state==="wait"?" · กำลังบันทึกลงฐานข้อมูล…":r.state==="fail"?" · ส่งไม่สำเร็จ":"");
+    const btn=r.state==="fail"
+      ? `<button class="btn btn-danger btn-sm" data-act="asretry" data-v="${r.cc.id}">ส่งอีกครั้ง</button>`
+      : `<button class="btn ${r.m?"btn-ghost":"btn-primary"} btn-sm" data-act="ascomp2" data-v="${r.cc.id}"
+           ${r.state==="wait"?"disabled":""}>${r.m?"แก้ไข":"ประเมิน"}</button>`;
+    return `<div class="asx-item ${r.state==="todo"?"":r.state} ${r.cc.id===c.id?"cur":""}">
+      <span class="ic" aria-hidden="true">${ic}</span>
+      <div class="bd"><div class="t" title="${esc(r.cc.th)}"><b>${esc(r.cc.code)}</b> ${esc(r.cc.th)}</div>
+        <div class="m">${meta}</div></div>${btn}</div>`;
   }).join("");
-  return card("สมรรถนะที่ท่านประเมินนักศึกษารายนี้แล้ว",
-    `นับจากระเบียนการประเมินจริงในฐานข้อมูล เฉพาะรายการที่บันทึกโดยบัญชีของท่านเอง`,
-    `<div class="grid g3" style="gap:.7rem;margin-bottom:.9rem">
-      ${stat("ประเมินแล้ว",`${done.length} / ${comps.length}`,done.length?`ล่าสุด ${Object.values(mine).map(m=>m.date).filter(Boolean).sort().slice(-1)[0]||"—"}`:"ยังไม่ได้เริ่มประเมิน")}
-      ${stat("คงเหลือ",left.length,left.length?left.slice(0,3).map(c=>c.code).join(" · ")+(left.length>3?" …":""):"ครบทุกสมรรถนะแล้ว")}
-      ${stat("ความคืบหน้า",comps.length?Math.round(done.length/comps.length*100)+"%":"—",
-        `${yearOf(FW,y).label} · ${comps.length} สมรรถนะที่เปิดใช้`)}
-    </div>
-    <div class="scroll-x"><table class="tight" style="min-width:820px"><thead><tr>
-      <th style="width:32px">#</th><th>สมรรถนะ</th><th style="width:130px">สถานะ</th>
-      <th class="num" style="width:80px">คะแนน</th><th class="num" style="width:80px">เป้าหมาย</th>
-      <th style="width:110px">วันที่</th><th class="num" style="width:90px">รอบ</th>
-      <th class="num" style="width:100px">ให้คะแนน</th><th style="width:90px"></th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`,"",false);
+
+  const pills=[["all",`ทั้งหมด ${comps.length}`],["done",`ประเมินแล้ว ${nDone}`],["todo",`ยังไม่ได้ประเมิน ${nLeft}`]]
+    .map(([k,l])=>`<button class="${f===k?"on":""}" data-act="asfilter" data-v="${k}">${l}</button>`).join("");
+
+  /* แถบแจ้งผลหลังกดบันทึก พร้อมปุ่มไปสมรรถนะถัดไป ผู้ประเมินจึงทำต่อได้ทันที */
+  const jc=S.asJust&&S.asJust.sid===st.id?comps.find(cc=>cc.id===S.asJust.comp):null;
+  const jm=jc?mine[jc.id]:null;
+  const just=!jc?"":`<div class="alert ${jm&&jm.state==="failed"?"alert-err":"alert-ok"} asx-just">
+    <span>${jm&&jm.state==="failed"
+      ?`ส่งผลการประเมิน <b>${esc(jc.code)}</b> ไม่สำเร็จ คะแนนยังเก็บไว้ในเครื่องนี้ กดส่งอีกครั้งที่รายการด้านล่าง`
+      :jm&&jm.state==="saving"
+      ?`⏳ กำลังบันทึกผลการประเมิน <b>${esc(jc.code)}</b> ${esc(jc.th)} ลงฐานข้อมูล`
+      :`✅ บันทึกผลการประเมิน <b>${esc(jc.code)}</b> ${esc(jc.th)} เรียบร้อยแล้ว${live?"":" (โหมดสาธิต)"}`}</span>
+    ${nx?`<button class="btn btn-primary btn-sm" data-act="asnextcomp">ประเมินสมรรถนะถัดไป · ${esc(nx.code)} →</button>`
+       :`<b>ประเมินครบทุกสมรรถนะแล้ว</b>`}</div>`;
+
+  return `${just}<section class="card">
+    <div class="card-h"><div><h3>ขั้นที่ 3 · สมรรถนะที่ท่านประเมิน${isStu?"ตนเอง":"นักศึกษารายนี้"}แล้ว</h3>
+      <p>${esc(st.name)} · ${esc(yearOf(FW,y).label)} · นับจากระเบียนจริงในฐานข้อมูล เฉพาะที่บันทึกโดยบัญชีของท่าน</p></div>
+      <div class="pills">${pills}</div></div>
+    <div class="card-b">
+      <div class="asx-stats">
+        <div class="asx-stat"><div class="k">ประเมินแล้ว</div><div class="v">${nDone} / ${comps.length}</div></div>
+        <div class="asx-stat"><div class="k">คงเหลือ</div><div class="v">${nLeft}</div></div>
+        <div class="asx-stat"><div class="k">ความคืบหน้า</div><div class="v">${pct}%</div>
+          <span class="bar"><i style="width:${pct}%"></i></span></div>
+        <div class="asx-stat"><div class="k">ประเมินล่าสุด</div><div class="v" style="font-size:1rem">${last?esc(thaiDate(last)):"—"}</div></div>
+      </div>
+      ${nWait||nFail?`<div class="asx-tip">${nWait?`⏳ กำลังบันทึก ${nWait} รายการ`:""}${nWait&&nFail?" · ":""}${nFail?`<span style="color:var(--risk)">ส่งไม่สำเร็จ ${nFail} รายการ</span>`:""}</div>`:""}
+      <div class="asx-list">${items||`<div class="empty" style="grid-column:1/-1">ไม่มีรายการในตัวกรองนี้</div>`}</div>
+      <div class="asx-actions">
+        <button class="btn btn-ghost" data-act="asstep" data-v="1">← ${isStu?"เลือกสมรรถนะอื่น":"เปลี่ยนนักศึกษา / สมรรถนะ"}</button>
+        <button class="btn btn-ghost" data-act="asstep" data-v="2">กลับไปแบบประเมิน ${esc(c.code)}</button>
+        ${jc?"":nx?`<button class="btn btn-primary grow" data-act="asnextcomp">ประเมินสมรรถนะถัดไป · ${esc(nx.code)} →</button>`
+          :`<span class="tag tag-ok grow">ประเมินครบทุกสมรรถนะแล้ว</span>`}
+      </div>
+    </div></section>`;
 }
 
 /* ---------- แบบร่างการประเมินในเครื่องผู้ใช้ ----------
@@ -4432,17 +4665,28 @@ function asDraftSync(){
   S.asRestored=!!(d&&Object.keys(S.asScores).length);
 }
 
+/** หน้าประเมินสมรรถนะแบบสามขั้นตอน
+      1 ตั้งค่าแบบประเมิน เลือกนักศึกษาและสมรรถนะ
+      2 แบบประเมิน ให้คะแนนทีละตัวชี้วัด
+      3 สมรรถนะที่ท่านประเมินนักศึกษารายนี้แล้ว
+    แสดงครั้งละหนึ่งขั้นใต้แถบขั้นตอน หน้าจอจึงสั้นพอดีจอ ไม่ต้องเลื่อนผ่านส่วนที่ไม่เกี่ยวกับงานตรงหน้า */
 function assessPage(){
   const stu=visStudents();
   if(!stu.length) return card("การประเมิน","",`<div class="empty">ยังไม่มีนักศึกษาในระบบ</div>`);
-  if(S.role==="Student"){const me=userById(S.user.linkTo||S.user.id); S.asSid=me?me.id:stu[0].id;}
-  if(!S.asSid||!userById(S.asSid)) S.asSid=stu[0].id;
+  const isStu=S.role==="Student";
+  /* บัญชีใหม่เข้ามาในแท็บเดิม เริ่มที่ขั้นแรกเสมอ ไม่ค้างขั้นหรือนักศึกษาของผู้ใช้คนก่อน */
+  const owner=String(S.user.linkTo||S.user.id)+"|"+S.role;
+  if(S.asOwner!==owner){ S.asOwner=owner; S.asStep=1; S.asJust=null; S.asFilter="all"; S.asSid=null; S.asComp=null; S.asKey=null; }
+  if(isStu){const me=userById(S.user.linkTo||S.user.id); S.asSid=me?me.id:stu[0].id;}
+  /* ต้องเป็นนักศึกษาในขอบเขตของผู้ประเมินเท่านั้น ไม่ใช่แค่มีบัญชีอยู่ในระบบ */
+  if(!S.asSid||!(isStu?userById(S.asSid):stu.some(s=>s.id===S.asSid))) S.asSid=stu[0].id;
   const st=userById(S.asSid), y=st.year, comps=activeComps(FW,y);
   if(!comps.length) return card("การประเมิน","",`<div class="empty">ชั้นปีนี้ยังไม่มีสมรรถนะที่เปิดใช้</div>`);
-  if(!S.asComp||!comps.some(c=>c.id===S.asComp)) S.asComp=comps[0].id;
-  const c=comps.find(x=>x.id===S.asComp), cfg=cfgOf(FW,y,c.id);
   /* สมรรถนะที่บัญชีนี้ประเมินนักศึกษารายนี้ไปแล้วจริง อ่านจากระเบียนในฐานข้อมูล */
   const mine=assessedByMe(st.id);
+  /* ค่าตั้งต้นคือสมรรถนะแรกที่ท่านยังไม่ได้ประเมิน ผู้ประเมินส่วนใหญ่จึงกดเริ่มได้เลยโดยไม่ต้องไล่หา */
+  if(!S.asComp||!comps.some(c=>c.id===S.asComp)) S.asComp=(comps.find(c=>!mine[c.id])||comps[0]).id;
+  const c=comps.find(x=>x.id===S.asComp), cfg=cfgOf(FW,y,c.id);
   /* ประเภทการประเมินที่แต่ละบทบาทเลือกได้ ต้องสอดคล้องกับ api_assessSubmit ใน Code.gs
      อาจารย์นิเทศก์แต่ละประเภทบันทึกในช่องทางของตนเอง จึงแยกดูคะแนนรายฝ่ายได้ */
   const allowType=id=>S.role==="Student"?["self","peer"].includes(id)
@@ -4455,55 +4699,160 @@ function assessPage(){
      เพราะคีย์ของแบบร่างประกอบขึ้นจากทั้งสามค่านี้ */
   asDraftSync();
   /* คิดความคืบหน้าหลังเรียกแบบร่างกลับแล้ว มิฉะนั้นจะนับจากคะแนนชุดเก่า */
-  const done=cfg.indicators.length>0&&cfg.indicators.every(i=>S.asScores[i.id]);
+  const n=cfg.indicators.length;
+  const answered=cfg.indicators.filter(i=>S.asScores[i.id]).length;
+  const done=n>0&&answered===n;
   const result=done?mean(cfg.indicators.map(i=>S.asScores[i.id])):null;
   /* บทบาทผู้ประเมินส่วนใหญ่บันทึกได้ช่องทางเดียวอยู่แล้ว เช่น ครูพี่เลี้ยงเลือกได้แค่ "ครูพี่เลี้ยง"
      กล่องเลือกที่มีตัวเลือกเดียวจึงเป็นภาระสายตาโดยไม่ให้ทางเลือกอะไร แสดงเป็นป้ายบอกแทน
      เหลือกล่องเลือกไว้เฉพาะบทบาทที่เลือกได้จริง คือนักศึกษาและผู้ดูแล */
   const allowed=ASSESS_TYPES.filter(([id])=>allowType(id));
   const typeField=allowed.length>1
-    ? `<div class="field" style="margin-top:0"><label>ประเภทการประเมิน</label>
-        <select class="inp" data-act="astype">${allowed
+    ? `<div class="field"><label for="as_type">ประเภทการประเมิน</label>
+        <select class="inp" id="as_type" data-act="astype">${allowed
           .map(([id,l])=>`<option value="${id}" ${S.asType===id?"selected":""}>${l}</option>`).join("")}</select></div>`
     : "";
   const typeChip=allowed.length>1?"":`<span class="tag tag-a">บันทึกในช่องทาง ${esc((allowed[0]||["","—"])[1])}</span>`;
-  const indCards=assessWizard(cfg,done);
+
+  if(![1,2,3].includes(S.asStep)) S.asStep=1;
+  const x={stu,isStu,st,y,comps,c,cfg,mine,n,answered,done,result,typeField,typeChip,
+    nDone:comps.filter(cc=>mine[cc.id]).length};
+  const body=S.asStep===1?asStep1(x):S.asStep===2?asStep2(x):asStep3(x);
+  return `${asStepper(x)}${body}`;
+}
+
+/** แถบขั้นตอน 1 → 2 → 3 ติดด้านบนของหน้าประเมินตลอดเวลา
+    แต่ละขั้นบอกสถานะของตนเองด้วยข้อความสั้นและแถบความคืบหน้า กดเพื่อข้ามไปขั้นนั้นได้ทันที */
+function asStepper(x){
+  const {st,c,comps,mine,n,answered,nDone,isStu}=x;
+  const step=S.asStep, m=mine[c.id];
+  /* ขั้นที่ 2 ถือว่าเสร็จเมื่อสมรรถนะที่เลือกถูกประเมินแล้ว และไม่มีคะแนนที่กำลังแก้ค้างอยู่ */
+  const doneOf={1:step>1, 2:!!m&&answered===0&&m.state!=="failed", 3:comps.length>0&&nDone===comps.length};
+  const sub={
+    1:isStu?`${c.code} · ${c.th}`:`${st.name} · ${c.code}`,
+    2:answered?`ตอบแล้ว ${answered}/${n} ข้อ`
+      :m?(m.state==="saving"?"กำลังบันทึก…":m.state==="failed"?"ส่งไม่สำเร็จ":"ประเมินแล้ว")
+      :`${n} ตัวชี้วัด · ยังไม่เริ่ม`,
+    3:`ประเมินแล้ว ${nDone}/${comps.length} สมรรถนะ`};
+  const bar={2:n?Math.round(answered/n*100):0, 3:comps.length?Math.round(nDone/comps.length*100):0};
+  const names=[[1,"ตั้งค่าแบบประเมิน","ตั้งค่า"],[2,"แบบประเมิน","ประเมิน"],[3,"สมรรถนะที่ประเมินแล้ว","ประเมินแล้ว"]];
+  const items=names.map(([k,lg,sm])=>{
+    const cls=k===step?"cur":doneOf[k]?"done":"";
+    const showBar=k!==1&&!(k===2&&!answered);
+    return `<button class="asx-step ${cls}" data-act="asstep" data-v="${k}" ${k===step?'aria-current="step"':""}
+        title="ขั้นที่ ${k} · ${lg}">
+      <span class="no">${cls==="done"?"✓":k}</span>
+      <span class="tx"><b><span class="lg">${lg}</span><span class="sm">${sm}</span></b>
+        <small>${esc(sub[k])}</small>
+        ${showBar?`<span class="mini"><i style="width:${bar[k]}%"></i></span>`:""}</span>
+    </button>`;
+  });
+  return `<nav class="asx-steps" aria-label="ขั้นตอนการประเมินสมรรถนะ">${items.join(`<span class="asx-arr" aria-hidden="true">→</span>`)}</nav>`;
+}
+
+/** ขั้นที่ 1 · ตั้งค่าแบบประเมิน เลือกนักศึกษาและสมรรถนะ
+    ซ้ายคือตัวเลือก ขวาคือรายละเอียดของสิ่งที่เลือก ผู้ประเมินจึงตรวจได้ก่อนเริ่มว่าเลือกถูกคนถูกด้าน */
+function asStep1(x){
+  const {stu,isStu,st,y,comps,c,cfg,mine,n,answered,typeField,typeChip,nDone}=x;
+  const yc=yearOf(FW,y), m=mine[c.id];
+  const nInds=comps.reduce((s,cc)=>s+cfgOf(FW,y,cc.id).indicators.length,0);
+  const off=FW.competencies.length-comps.length;
+  const pct=comps.length?Math.round(nDone/comps.length*100):0;
+  const nx=m?asNextTodo(comps,mine,c.id):null;
+  const draftAt=S.asDraftAt?new Date(S.asDraftAt):null;
+  const startLabel=answered>0&&answered<n?`ประเมินต่อจากแบบร่าง (${answered}/${n} ข้อ) →`
+    :n>0&&answered===n?"ตรวจทานและบันทึก →"
+    :m?"ประเมินซ้ำ →":"เริ่มประเมิน →";
+  const init=esc((st.name||"?").trim().charAt(0));
+  const status=!m?`<span class="tag tag-n">ยังไม่ได้ประเมิน</span>`
+    :m.state==="saving"?`<span class="tag tag-warn">⏳ กำลังบันทึกลงฐานข้อมูล</span>`
+    :m.state==="failed"?`<span class="tag tag-risk">ส่งไม่สำเร็จ · ส่งซ้ำได้ที่ขั้นที่ 3</span>`
+    :`<span class="tag tag-ok">✓ ท่านประเมินแล้ว</span>
+      <span class="sub">${esc(thaiDate(m.date))} · ครั้งที่ ${m.round} · บันทึกใหม่จะเป็นการประเมินซ้ำในรอบปัจจุบัน</span>`;
+
+  const form=`<section class="card"><div class="card-h"><div>
+      <h3>ขั้นที่ 1 · ตั้งค่าแบบประเมินสมรรถนะ</h3>
+      <p>${isStu?"เลือกสมรรถนะที่ต้องการประเมินตนเอง":"เลือกนักศึกษาและสมรรถนะที่ต้องการประเมิน"} แล้วกดเริ่มประเมิน</p></div></div>
+    <div class="card-b">
+      ${isStu?"":`<div class="field"><label for="as_sid">นักศึกษา <span class="sub">· ${stu.length} คนในขอบเขตของท่าน</span></label>
+        <select class="inp" id="as_sid" data-act="assid">${stu.map(s=>`<option value="${s.id}" ${s.id===S.asSid?"selected":""}>${esc(s.program||"")} ปี ${s.year} · ${esc(s.name)}</option>`).join("")}</select></div>`}
+      <div class="field"><label for="as_comp">สมรรถนะ <span class="sub">· ✓ ประเมินแล้ว ◻ ยังไม่ได้ประเมิน</span></label>
+        <select class="inp" id="as_comp" data-act="ascomp">${comps.map(cc=>`<option value="${cc.id}" ${cc.id===c.id?"selected":""}>${mine[cc.id]?"✓":"◻"} ${esc(cc.code)} · ${esc(cc.th)}</option>`).join("")}</select></div>
+      ${typeField}
+      ${typeChip?`<div class="row" style="margin-top:.8rem">${typeChip}</div>`:""}
+      ${nx?`<div class="asx-tip">💡 สมรรถนะนี้ท่านประเมินแล้ว · ถัดไปที่ยังไม่ได้ประเมินคือ <b>${esc(nx.code)}</b> ${esc(nx.th)}
+        <button class="btn btn-ghost btn-sm" data-act="aspick" data-v="${nx.id}">เลือกสมรรถนะนี้</button></div>`:""}
+      <div class="asx-scope">กรอบสมรรถนะ${esc(yc.label)} · เปิดใช้ ${comps.length} จาก ${FW.competencies.length} สมรรถนะ${off?` (ปิดไว้ ${off})`:""}
+        · ${nInds} ตัวชี้วัด · แสดงเฉพาะสมรรถนะที่ผู้ดูแลระบบเปิดใช้ในชั้นปีนี้</div>
+      <div class="asx-actions">
+        <button class="btn btn-ghost" data-act="asstep" data-v="3">ดูสมรรถนะที่ประเมินแล้ว (${nDone}/${comps.length})</button>
+        <button class="btn btn-primary grow" data-act="asstart" ${n?"":"disabled"}>${startLabel}</button>
+      </div>
+    </div></section>`;
+
+  const preview=`<section class="card"><div class="card-h"><div>
+      <h3>รายละเอียดที่เลือก</h3><p>ตรวจสอบให้ถูกต้องก่อนเริ่มประเมิน</p></div></div>
+    <div class="card-b">
+      <div class="asx-who">
+        <span class="asx-av">${st.photo?`<img src="${esc(photoSrc(st.photo))}" alt="" onerror="this.remove()">`:init}</span>
+        <div style="min-width:0"><div class="nm">${esc(st.name)}</div>
+          <div class="sub">${[st.code&&st.code!=="—"?"รหัส "+esc(st.code):"",esc(st.program||""),esc(yc.label)].filter(Boolean).join(" · ")}</div></div>
+      </div>
+      <div class="asx-prog"><span>${isStu?"ประเมินตนเองแล้ว":"ท่านประเมินแล้ว"} ${nDone}/${comps.length} สมรรถนะ</span>
+        <span class="bar"><i style="width:${pct}%"></i></span><b>${pct}%</b></div>
+      <div class="asx-kv">
+        <span class="tag tag-a">${esc(c.code)}</span>
+        <div class="cn">${esc(c.th)}</div>
+        <div class="sub" style="margin-top:.2rem">${n} ตัวชี้วัด · เป้าหมายระดับ ${cfg.target} · ระยะ${esc(yc.stage)}</div>
+        <div class="row" style="margin-top:.6rem">${status}</div>
+        ${answered?`<div class="asx-tip" style="border-style:solid">📝 มีแบบร่างค้างอยู่ ${answered}/${n} ข้อ
+          ${draftAt?`· บันทึกไว้ ${esc(thaiDateTime(draftAt))}`:""}</div>`:""}
+      </div>
+    </div></section>`;
+
+  return `<div class="asx-setup">${form}${preview}</div>`;
+}
+
+/** ขั้นที่ 2 · แบบประเมิน ให้คะแนนทีละตัวชี้วัด
+    หัวแบบประเมินบอกว่ากำลังประเมินใครในสมรรถนะใด โดยไม่ต้องย้อนไปดูขั้นแรก
+    ข้อเสนอแนะและคำแนะนำจากระบบพับเก็บได้ หน้าจอจึงเหลือแค่ส่วนที่ต้องใช้ให้คะแนน */
+function asStep2(x){
+  const {isStu,st,c,cfg,mine,n,answered,done,result}=x;
+  const m=mine[c.id];
+  const part=answered&&!done?mean(cfg.indicators.map(i=>S.asScores[i.id]).filter(v=>v!==undefined)):null;
+  const meta={code:c.code,name:c.th,target:cfg.target,isStu,
+    who:isStu?"":`${st.name} · ${st.program||""} ปี ${st.year}`,
+    prevDate:m&&m.state!=="failed"?thaiDate(m.date):""};
+
+  const summary=card("สรุปผล",done?"ประเมินครบทุกตัวชี้วัดแล้ว":`ตอบแล้ว ${answered} จาก ${n} ข้อ`,
+    result!==null
+      ?`<div style="font-family:'Noto Serif Thai',serif;font-size:2.3rem;font-weight:600;line-height:1.1">${fmt(result)}</div>
+        <div style="margin-top:.4rem">${levelChip(result)}</div>
+        <p style="font-size:.82rem;margin-top:.7rem;color:${result>=cfg.target?"var(--ok)":"var(--warn)"}">
+          ${result>=cfg.target?`ถึงระดับเป้าหมายของชั้นปี (${cfg.target})`:`ยังต่ำกว่าระดับเป้าหมายของชั้นปี (${cfg.target})`}</p>`
+      :part!==null
+      ?`<div class="sub">ค่าเฉลี่ยชั่วคราวจาก ${answered} ข้อที่ตอบแล้ว</div>
+        <div style="font-family:'Noto Serif Thai',serif;font-size:1.8rem;font-weight:600;line-height:1.2;color:var(--muted)">${fmt(part)}</div>
+        <p class="sub" style="margin-top:.4rem">ผลจริงจะแสดงเมื่อประเมินครบทุกตัวชี้วัด</p>`
+      :`<div class="empty" style="padding:1rem 0">ผลจะแสดงเมื่อประเมินครบทุกตัวชี้วัด</div>`);
+
+  /* จอใหญ่เปิดคำแนะนำไว้เพราะคอลัมน์ขวามีที่ว่าง จอเล็กหรือเตี้ยพับไว้ก่อน หน้าจะได้ไม่ยาวเกินจอ */
+  const wide=typeof matchMedia==="function"&&matchMedia("(min-width:1041px) and (min-height:820px)").matches;
+  const aiOpen=S.asAiOpen===null?wide:S.asAiOpen;
+  const ai=`<details class="asx-fold" id="as_ai" ${aiOpen?"open":""}>
+    <summary>ข้อเสนอแนะจากระบบ AI <span class="sub">· วิเคราะห์จากผลการประเมินที่บันทึกไว้จริง</span></summary>
+    ${assessAdvice(st,c,result)}</details>`;
+
   return `<div class="grid g2 as-cols">
-    <div class="stack">
-      ${card("แบบประเมินสมรรถนะ",`${yearOf(FW,y).label} · ระยะ${yearOf(FW,y).stage} · เป้าหมายระดับ ${cfg.target}`,
-        `<div class="grid ${allowed.length>1?"g3":"g2"}" style="gap:.7rem">
-          ${S.role==="Student"?"":`<div class="field" style="margin-top:0"><label>นักศึกษา</label>
-            <select class="inp" data-act="assid">${stu.map(s=>`<option value="${s.id}" ${s.id===S.asSid?"selected":""}>${s.program} ปี ${s.year} · ${esc(s.name)}</option>`).join("")}</select></div>`}
-          <div class="field" style="margin-top:0"><label>สมรรถนะ</label>
-            <select class="inp" data-act="ascomp">${comps.map(x=>`<option value="${x.id}" ${x.id===c.id?"selected":""}>${mine[x.id]?"✓ ":"◻ "}${x.code} · ${esc(x.th)}</option>`).join("")}</select></div>
-          ${typeField}
-        </div>
-        ${typeChip?`<div class="row" style="margin-top:.6rem">${typeChip}
-          <span class="sub">✓ หน้าชื่อสมรรถนะ คือด้านที่ท่านประเมินนักศึกษารายนี้ไปแล้ว</span></div>`:""}
-        ${frameworkScopeNote(y,comps)}
-        ${mine[c.id]?`<div class="alert alert-info" style="margin-bottom:0">ท่านเคยประเมินสมรรถนะนี้แล้วเมื่อ ${esc(mine[c.id].date||"—")}
-          (ครั้งที่ ${mine[c.id].round} · ให้คะแนน ${mine[c.id].n} ตัวชี้วัด) การบันทึกใหม่จะเป็นการประเมินซ้ำในรอบปัจจุบัน</div>`:""}`)}
-      ${assessedPanel(st,comps,mine)}
-      ${indCards}
-      ${card("ข้อเสนอแนะเพื่อการพัฒนา","ไม่บังคับ · จะถูกบันทึกไปพร้อมผลการประเมิน",
-        `<textarea class="inp" id="as_comment" rows="4" placeholder="ระบุสิ่งที่ทำได้ดีและสิ่งที่ควรพัฒนา พร้อมข้อเสนอแนะที่นำไปปฏิบัติได้" data-act="ascomment" data-nore>${esc(S.asComment||"")}</textarea>
-         ${S.asSaved?`<div class="alert alert-ok" style="margin-bottom:0">บันทึกผลการประเมินแล้ว</div>`:""}`)}
-    </div>
-    <div class="stack">
-      ${card("สรุปผล","",result===null?`<div class="empty" style="padding:1.4rem 0">ผลจะแสดงเมื่อประเมินครบทุกตัวชี้วัด</div>`:
-        `<div style="font-family:'Noto Serif Thai',serif;font-size:2.3rem;font-weight:600;line-height:1.1">${fmt(result)}</div>
-         <div style="margin-top:.4rem">${levelChip(result)}</div>
-         <p style="font-size:.82rem;margin-top:.7rem;color:${result>=cfg.target?"var(--ok)":"var(--warn)"}">
-           ${result>=cfg.target?`ถึงระดับเป้าหมายของชั้นปี (${cfg.target})`:`ยังต่ำกว่าระดับเป้าหมายของชั้นปี (${cfg.target})`}</p>`)}
-      ${assessAdvice(st,c,result)}
-    </div></div>`;
+    <div class="stack">${assessWizard(cfg,done,meta)}</div>
+    <div class="stack">${summary}${ai}</div></div>`;
 }
 
 /** แบบประเมินทีละตัวชี้วัด พร้อมแถบความก้าวหน้าและปุ่มเดินหน้าถอยหลัง
     แสดงครั้งละหนึ่งข้อ ผู้ประเมินจึงอ่านเกณฑ์ได้เต็มตาและไม่หลงว่าให้คะแนนถึงข้อไหนแล้ว
     ปุ่มถัดไปปิดไว้จนกว่าจะเลือกคะแนนของข้อปัจจุบัน เพื่อกันการข้ามข้อโดยไม่ตั้งใจ
     ข้อสุดท้ายเปลี่ยนเป็นปุ่มบันทึก ซึ่งเปิดให้กดเมื่อครบทุกข้อเท่านั้น */
-function assessWizard(cfg,done){
+function assessWizard(cfg,done,meta){
   const inds=cfg.indicators||[];
   if(!inds.length)
     return card("แบบประเมินสมรรถนะ","",`<div class="empty">สมรรถนะนี้ยังไม่มีตัวชี้วัดในชั้นปีนี้</div>`);
@@ -4538,10 +4887,17 @@ function assessWizard(cfg,done){
          ${done?"บันทึกผลการประเมิน":`ยังเหลืออีก ${n-answered} ข้อ`}</button>`
     : `<button class="btn btn-primary" ${picked?"":"disabled style=opacity:.45"} data-act="asnext">ถัดไป →</button>`;
 
+  /* หัวแบบประเมินบอกว่ากำลังประเมินสมรรถนะใดของใคร จึงไม่ต้องมีแถบบริบทแยกอีกแถว
+     ปุ่มเปลี่ยนพากลับไปขั้นที่ 1 ได้ทันที เหมือนกดขั้นที่ 1 บนแถบขั้นตอน */
+  const mt=meta||{};
+  const title=mt.code?`<span class="tag tag-a">${esc(mt.code)}</span> ${esc(mt.name||"")}`:"แบบประเมินสมรรถนะ";
+  const subBits=[mt.who?esc(mt.who):"",mt.target!==undefined?`เป้าหมายระดับ ${mt.target}`:"",
+    `ตัวชี้วัดที่ ${idx+1} จาก ${n}`,mt.prevDate?`เคยประเมินแล้ว ${esc(mt.prevDate)}`:""].filter(Boolean);
   return card("","",`<div class="asw-head">
       <div class="asw-ico">📋</div>
-      <div><div class="asw-ttl">แบบประเมินสมรรถนะ</div>
-        <div class="asw-sub">ตัวชี้วัดที่ ${idx+1} จาก ${n}</div></div>
+      <div style="min-width:0;flex:1 1 16rem"><div class="asw-ttl">${title}</div>
+        <div class="asw-sub">${subBits.join(" · ")}
+          ${mt.code?`· <button class="linkbtn" data-act="asstep" data-v="1">${mt.isStu?"เปลี่ยนสมรรถนะ":"เปลี่ยนนักศึกษา / สมรรถนะ"}</button>`:""}</div></div>
       <div class="asw-prog">
         <div class="asw-bar"><i style="width:${pct}%"></i></div>
         <span class="asw-pct">${answered} / ${n} ข้อ &nbsp;${pct}%</span></div>
@@ -4561,6 +4917,13 @@ function assessWizard(cfg,done){
     ${savedStrip}
     <div class="asw-dots">${dots}</div>
 
+    <details class="asx-fold asw-cmt" id="as_cmt" ${S.asCmtOpen||S.asComment?"open":""}>
+      <summary>💬 ข้อเสนอแนะเพื่อการพัฒนา <span class="sub">· ไม่บังคับ · บันทึกไปพร้อมผลการประเมิน</span>
+        ${S.asComment?`<span class="tag tag-ok">มีข้อความแล้ว</span>`:""}</summary>
+      <textarea class="inp" id="as_comment" rows="3" placeholder="ระบุสิ่งที่ทำได้ดีและสิ่งที่ควรพัฒนา พร้อมข้อเสนอแนะที่นำไปปฏิบัติได้"
+        data-act="ascomment" data-nore>${esc(S.asComment||"")}</textarea>
+    </details>
+
     <div class="asw-foot">
       <button class="btn btn-ghost" ${idx>0?"":"disabled style=opacity:.45"} data-act="asprev">← ก่อนหน้า</button>
       <div class="mid">
@@ -4573,9 +4936,8 @@ function assessWizard(cfg,done){
 
 /** วันเวลาแบบไทยอย่างย่อ ใช้กำกับเวลาที่บันทึกแบบร่างล่าสุด */
 function thaiDateTime(d){
-  const M=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
   const p=x=>String(x).padStart(2,"0");
-  return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()+543} เวลา ${p(d.getHours())}:${p(d.getMinutes())} น.`;
+  return `${d.getDate()} ${TH_MON[d.getMonth()]} ${d.getFullYear()+543} เวลา ${p(d.getHours())}:${p(d.getMinutes())} น.`;
 }
 
 /** ข้อเสนอแนะเชิงลึกสำหรับผู้ประเมิน ขณะกำลังประเมินสมรรถนะหนึ่งของนักศึกษาคนหนึ่ง
@@ -8591,7 +8953,26 @@ function render(){
      ช่วยให้ผู้สมัครพิมพ์ต่อได้ทันทีทุกขั้น โดยไม่ต้องเลื่อนหาช่องแรก */
   const af=document.querySelector("[data-af]");
   if(af){ try{ af.focus({preventScroll:true}); }catch(e){ af.focus(); } }
+  asFitList();
+  /* บอก CSS ว่ากำลังแสดงแบบประเมินที่มีแถบปุ่มติดขอบล่าง เพื่อยกปุ่มลอยอื่นให้พ้น */
+  document.body.classList.toggle("asx-pad",!!S.user&&S.page==="assess"&&S.asStep===2);
 }
+
+/** ปรับความสูงรายการสมรรถนะในขั้นที่ 3 ให้ทั้งหน้าพอดีจอ
+    ความสูงของส่วนหัวต่างกันมากตามขนาดจอ (แถบเมนูด้านข้างกลายเป็นแถบบนเมื่อจอแคบ)
+    ค่าคงที่ใน CSS จึงพอดีได้แค่บางขนาด วัดจากของจริงหลังวาดหน้าจอแล้วเหลือเท่าไรก็ให้รายการใช้เท่านั้น
+    จอโทรศัพท์ไม่จำกัด เพราะกล่องเลื่อนซ้อนในหน้าที่เลื่อนอยู่แล้วใช้นิ้วลำบาก */
+function asFitList(){
+  const el=document.querySelector(".asx-list");
+  const box=document.querySelector(".content");
+  if(!el||!box) return;
+  if(innerWidth<=640){ el.style.maxHeight=""; return; }
+  el.style.maxHeight="none";
+  const natural=el.getBoundingClientRect().height;
+  const over=box.getBoundingClientRect().bottom+scrollY-innerHeight;
+  el.style.maxHeight=Math.floor(over>0?Math.max(220,natural-over):natural)+"px";
+}
+window.addEventListener("resize",()=>{ if(S.page==="assess"&&S.asStep===3) asFitList(); });
 
 /* ---------- 20. ตัวจัดการเหตุการณ์ ---------- */
 const val=id=>{const e=document.getElementById(id);return e?e.value.trim():"";};
@@ -9153,16 +9534,51 @@ document.addEventListener("click",e=>{
     case "asprev": S.asIdx=Math.max(0,numOr(S.asIdx,0)-1); S.asRestored=false; asDraftSave(); break;
     case "asnext": S.asIdx=numOr(S.asIdx,0)+1; S.asRestored=false; asDraftSave(); break;
     case "asjump": S.asIdx=Math.max(0,numOr(k,0)); S.asRestored=false; asDraftSave(); break;
-    /* เลือกสมรรถนะจากตารางสรุปของผู้ประเมิน ทำงานเหมือนเลือกจากกล่องเลือกด้านบน
+    /* เลือกสมรรถนะจากรายการในขั้นที่ 3 แล้วไปทำแบบประเมินของสมรรถนะนั้นทันที
        ล้างคีย์แบบร่างเพื่อให้ระบบเรียกแบบร่างของสมรรถนะใหม่ขึ้นมาแทน */
-    case "ascomp2": S.asComp=v; S.asKey=null; S.asSaved=false; break;
-    case "assave":
-      S.asSaved=true;
-      /* บันทึกจริงแล้ว แบบร่างในเครื่องไม่จำเป็นอีก ลบทิ้งกันสับสนกับการประเมินรอบถัดไป */
-      asDraftClear(); S.asKey=null; S.asRestored=false;
+    case "ascomp2": S.asComp=v; S.asKey=null; S.asSaved=false; S.asJust=null; asGoStep(2); break;
+    /* เลือกสมรรถนะที่ระบบแนะนำในขั้นที่ 1 โดยยังอยู่ในขั้นเดิม ให้ตรวจรายละเอียดก่อนกดเริ่ม */
+    case "aspick": S.asComp=v; S.asKey=null; S.asSaved=false; break;
+    /* สลับขั้นจากแถบขั้นตอนหรือปุ่มย้อนกลับ */
+    case "asstep": S.asJust=null; asGoStep(v); break;
+    /* เริ่มประเมินจากขั้นที่ 1 เปิดที่ข้อแรกที่ยังไม่ได้ให้คะแนน
+       ถ้ามีแบบร่างค้างอยู่จึงทำต่อจากจุดเดิมได้ทันที ถ้าตอบครบแล้วเปิดข้อสุดท้ายซึ่งมีปุ่มบันทึก */
+    case "asstart": {
+      const st=userById(S.asSid);
+      const inds=st?((cfgOf(FW,st.year,S.asComp).indicators)||[]):[];
+      const k=inds.findIndex(i=>S.asScores[i.id]===undefined);
+      S.asIdx=k>=0?k:Math.max(0,inds.length-1); S.asJust=null;
+      asGoStep(2); break; }
+    /* ไปสมรรถนะถัดไปที่ยังไม่ได้ประเมิน นับต่อจากตัวที่เพิ่งทำ */
+    case "asnextcomp": {
+      const st=userById(S.asSid); if(!st){ re=false; break; }
+      const nx=asNextTodo(activeComps(FW,st.year),assessedByMe(st.id),S.asComp);
+      if(!nx){ re=false; break; }
+      S.asComp=nx.id; S.asKey=null; S.asSaved=false; S.asJust=null;
+      asGoStep(2); break; }
+    case "asfilter": S.asFilter=v; break;
+    case "asretry": asRetry(v); re=false; break;
+    case "assave": {
+      const st=userById(S.asSid);
+      const inds=st?((cfgOf(FW,st.year,S.asComp).indicators)||[]):[];
+      const vals=inds.map(i=>S.asScores[i.id]).filter(s=>s!==undefined);
+      const live=typeof liveOn==="function"&&liveOn();
+      const cm=document.getElementById("as_comment");
+      if(cm) S.asComment=cm.value;
+      /* จำผลชุดนี้ไว้ในเครื่องก่อน ขั้นที่ 3 จึงแสดงผลได้ทันทีโดยไม่ต้องรอเซิร์ฟเวอร์ตอบ
+         ถ้าส่งไม่สำเร็จ คะแนนยังอยู่ให้กดส่งซ้ำได้ ไม่หายไปพร้อมแบบร่างที่ถูกลบ */
+      if(st&&vals.length)
+        asLocalSet(st.id,S.asComp,{by:String(S.user.linkTo||S.user.id),state:live?"saving":"demo",
+          date:localISODate(),round:asRoundOf(st.id),n:vals.length,v:mean(vals),type:S.asType,
+          scores:Object.assign({},S.asScores),comment:S.asComment||"",at:new Date().toISOString()});
+      S.asSaved=true; S.asJust={sid:S.asSid,comp:S.asComp}; S.asFilter="all";
+      /* บันทึกแล้ว แบบร่างในเครื่องไม่จำเป็นอีก ลบทิ้งกันสับสนกับการประเมินรอบถัดไป */
+      asDraftClear(); S.asKey=null; S.asRestored=false; S.asComment=""; S.asCmtOpen=false;
       /* โหมดจริงจะมี livePush แจ้งสถานะการบันทึกให้เอง ตรงนี้จึงแจ้งเฉพาะโหมดสาธิต */
-      if(!(typeof liveOn==="function"&&liveOn())) toast("✅ บันทึกผลการประเมินแล้ว (โหมดสาธิต ยังไม่เขียนลงฐานข้อมูล)","ok");
-      break;
+      if(!live) toast("✅ บันทึกผลการประเมินแล้ว (โหมดสาธิต ยังไม่เขียนลงฐานข้อมูล)","ok");
+      /* ไปขั้นที่ 3 ให้เห็นทันทีว่าสมรรถนะนี้ถูกนับแล้ว และเหลืออะไรที่ต้องประเมินต่อ */
+      asGoStep(3);
+      break; }
 
     /* --- แฟ้มสะสมงาน --- */
     case "evcomp": { const i=S.evNew.comps.indexOf(v);
@@ -9253,9 +9669,9 @@ document.addEventListener("change",e=>{
     case "lecscope": S.lecScope=val2; break;
     /* เปลี่ยนชุดที่กำลังประเมิน ล้างคีย์แบบร่างเพื่อให้เรียกแบบร่างของชุดใหม่ขึ้นมา
        ไม่ต้องล้างคะแนนเอง เพราะ asDraftSync จะตั้งค่าให้ตามแบบร่างของชุดนั้น */
-    case "assid": S.asSid=val2; S.asComp=null; S.asKey=null; S.asSaved=false; break;
-    case "ascomp": S.asComp=val2; S.asKey=null; S.asSaved=false; break;
-    case "astype": S.asType=val2; S.asKey=null; S.asSaved=false; break;
+    case "assid": S.asSid=val2; S.asComp=null; S.asKey=null; S.asSaved=false; S.asJust=null; break;
+    case "ascomp": S.asComp=val2; S.asKey=null; S.asSaved=false; S.asJust=null; break;
+    case "astype": S.asType=val2; S.asKey=null; S.asSaved=false; S.asJust=null; break;
     /* เก็บข้อเสนอแนะลงแบบร่างด้วย จะได้ไม่หายไปพร้อมกับคะแนนเมื่อรีเฟรชหน้า */
     case "ascomment": S.asComment=val2; asDraftSave(); re=false; break;
     case "evtype": S.evNew.type=val2; re=false; break;
@@ -10443,6 +10859,34 @@ async function livePush(action, params, okMsg, after) {
   } finally { liveBusy(-1); render(); }
 }
 
+/** ส่งผลการประเมินหนึ่งชุดลงฐานข้อมูล ใช้ทั้งตอนกดบันทึกและตอนกดส่งซ้ำจากขั้นที่ 3
+    อัปเดตสถานะของผลที่ค้างในเครื่องตามผลจริง ขั้นที่ 3 จึงบอกได้ว่ากำลังบันทึก บันทึกแล้ว หรือส่งไม่สำเร็จ
+    livePush เรียก after เฉพาะเมื่อเซิร์ฟเวอร์รับข้อมูลแล้วเท่านั้น จึงใช้เป็นสัญญาณว่าสำเร็จ */
+function asLivePush(p) {
+  let ok = false;
+  return livePush('assess.submit', {student_id: p.sid, comp_id: p.comp, assess_type: p.type,
+    scores: p.scores, comment: p.comment || '', round_no: p.round, term_id: LIVE_CFG.term},
+    'บันทึกผลการประเมินลงฐานข้อมูลแล้ว',
+    async () => {
+      ok = true;
+      const L = asLocalGet(p.sid, p.comp);
+      if (L) L.state = 'saved';
+      await liveStudent(p.sid, false);
+      EDM_CACHE = null;
+      /* ข้อมูลจากฐานข้อมูลมีรายการนี้แล้ว จึงเลิกแสดงผลชั่วคราว
+         ถ้าดึงใหม่ไม่สำเร็จ ยังคงผลชั่วคราวไว้ในสถานะบันทึกแล้ว ไม่ให้รายการหายไปจากหน้าจอ */
+      const me = String(S.user ? (S.user.linkTo || S.user.id) : '');
+      const got = (ASSESS_LOG[p.sid] || []).some(a => a.comp_id === p.comp &&
+        String(a.assessor_id) === me && (!L || String(a.date) >= String(L.date)));
+      if (got) asLocalDrop(p.sid, p.comp);
+    }).then(() => {
+      if (ok) return;
+      const L = asLocalGet(p.sid, p.comp);
+      if (L) L.state = 'failed';
+      render();
+    });
+}
+
 /** รอบการประเมินที่ใช้บันทึก ค่าตั้งต้นคือรอบล่าสุดที่มีอยู่ เพื่อให้คะแนนของ
     อาจารย์นิเทศก์และครูพี่เลี้ยงอยู่รอบเดียวกันแล้วนำมาเฉลี่ยกันได้
     หากต้องการเปิดรอบใหม่ ให้ตั้ง LIVE_CFG.round เป็นตัวเลขรอบที่ต้องการ */
@@ -10786,12 +11230,11 @@ document.addEventListener('click', e => {
       break;
     case 'assave': {
       if (!d.sid || !d.comp || !Object.keys(d.scores).length) break;
-      const type = d.type || (S.role === 'Mentor' ? 'mentor' : 'lecturer');
-      livePush('assess.submit', {student_id: d.sid, comp_id: d.comp, assess_type: type,
+      const L = asLocalGet(d.sid, d.comp);
+      asLivePush({sid: d.sid, comp: d.comp,
+        type: d.type || (S.role === 'Mentor' ? 'mentor' : 'lecturer'),
         scores: d.scores, comment: d.comment || '',
-        round_no: liveRound(d.sid), term_id: LIVE_CFG.term},
-        'บันทึกผลการประเมินลงฐานข้อมูลแล้ว',
-        async () => { await liveStudent(d.sid, false); EDM_CACHE = null; });
+        round: L ? L.round : liveRound(d.sid)});
       break;
     }
     case 'pfsave': {
@@ -11154,7 +11597,11 @@ window.addEventListener("resize",()=>{
    กดเลขระดับเพื่อให้คะแนน กดลูกศรเพื่อเลื่อนข้อ
    ไม่ทำงานขณะโฟกัสอยู่ในช่องกรอกข้อความ มิฉะนั้นจะพิมพ์ข้อเสนอแนะไม่ได้ */
 document.addEventListener("keydown",e=>{
-  if(S.screen!=="app"||S.page!=="assess") return;
+  /* ทำงานเฉพาะขั้นที่ 2 ซึ่งมีแบบประเมินแสดงอยู่ ขั้นอื่นไม่เห็นข้อที่กำลังให้คะแนน
+     ถ้ายอมให้กดตัวเลขได้ คะแนนจะถูกบันทึกลงแบบร่างโดยผู้ประเมินไม่รู้ตัว */
+  /* สถานะเข้าสู่ระบบดูจาก S.user เหมือน view() ค่า S.screen เป็นของหน้าก่อนเข้าระบบเท่านั้น
+     เดิมตรวจ S.screen==="app" ซึ่งไม่มีที่ใดตั้งค่านี้เลย คีย์ลัดจึงไม่เคยทำงานจริง */
+  if(!S.user||S.page!=="assess"||S.asStep!==2) return;
   if(e.ctrlKey||e.altKey||e.metaKey) return;
   const t=e.target;
   if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable)) return;
@@ -11175,6 +11622,15 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft"){ e.preventDefault();
     if(idx>0){ S.asIdx=idx-1; asDraftSave(); render(); } return; }
 });
+
+/* จำว่าผู้ใช้เปิดหรือพับกล่องในหน้าประเมินไว้ เพราะการให้คะแนนแต่ละข้อจะวาดหน้าจอใหม่ทั้งหมด
+   ถ้าไม่จำไว้ กล่องจะเด้งกลับสถานะเดิมทุกครั้งที่กดคะแนน
+   เหตุการณ์ toggle ไม่ไหลขึ้นไปยัง document จึงต้องดักในช่วง capture */
+document.addEventListener("toggle",e=>{
+  const t=e.target; if(!t||!t.id) return;
+  if(t.id==="as_ai") S.asAiOpen=t.open;
+  else if(t.id==="as_cmt") S.asCmtOpen=t.open;
+},true);
 
 /* กลับมาที่แท็บหลังสลับไปทำอย่างอื่น ให้ตรวจกรอบสมรรถนะอีกครั้ง
    ผู้ประเมินมักเปิดหน้านี้ค้างไว้ทั้งวัน ถ้าไม่ตรวจซ้ำก็จะไม่เห็นสิ่งที่ผู้ดูแลเพิ่งเปลี่ยน */
