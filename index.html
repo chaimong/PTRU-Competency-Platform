@@ -1562,6 +1562,9 @@ const S={
      asFilter ตัวกรองรายการในขั้นที่ 3 · asJust ชุดที่เพิ่งกดบันทึก ใช้แสดงแถบแจ้งผลในขั้นที่ 3
      asAiOpen/asCmtOpen จำว่ากล่องพับเปิดอยู่หรือไม่ · asOwner บัญชีที่ตั้งค่าหน้านี้ไว้ */
   asStep:1, asFilter:"all", asJust:null, asAiOpen:null, asCmtOpen:false, asOwner:"",
+  /* asYear ชั้นปีที่ใช้กรองรายชื่อนักศึกษา · asRound ครั้งที่ประเมินที่กำลังบันทึก (1–3)
+     asRound เป็น null ก่อนเปิดหน้า แล้วตั้งเป็นครั้งล่าสุดของนักศึกษาที่เลือกให้เอง */
+  asYear:"all", asRound:null,
   msg:"", err:"", notice:"",
   forgotSent:false, otpUser:null,
   /* ระบบสมัครสมาชิกชุดเดียว ใช้สถานะก้อนเดียวแทนของเดิมที่แยกเป็น reg* กับ stu* คนละชุด */
@@ -4446,23 +4449,28 @@ function ladderPage(){
 }
 /** สมรรถนะที่ผู้ใช้คนนี้ประเมินนักศึกษารายนี้ไปแล้วจริง
     อ่านจาก ASSESS_LOG ซึ่งมาจากชีต Assessments จึงเป็นระเบียนของผู้ประเมินคนนั้นเอง
-    ไม่ใช่การเดาจากคะแนนรวมของช่องทาง คืนวัตถุ {comp_id: {date, round, n_items, type}} */
-function assessedByMe(sid){
+    ไม่ใช่การเดาจากคะแนนรวมของช่องทาง คืนวัตถุ {comp_id: {date, round, n_items, type}}
+    round คือครั้งที่ประเมินที่ผู้ประเมินเลือกไว้ นับเฉพาะระเบียนของครั้งนั้น
+    เพราะการประเมินครั้งที่ 1 กับครั้งที่ 2 เป็นคนละรายการ ต้องทำครบทุกสมรรถนะแยกกันในแต่ละครั้ง */
+function assessedByMe(sid,round){
   const uid=String(S.user?(S.user.linkTo||S.user.id):"");
+  const rd=round?Number(round):0;
   const out={};
   (ASSESS_LOG[sid]||[]).forEach(a=>{
     if(String(a.assessor_id)!==uid) return;
+    if(rd&&Number(a.round_no||1)!==rd) return;
     const prev=out[a.comp_id];
     if(!prev||String(a.date)>String(prev.date)||a.round_no>prev.round)
-      out[a.comp_id]={date:a.date,round:a.round_no,n:a.n_items,type:a.type,state:"saved"};
+      out[a.comp_id]={date:a.date,round:Number(a.round_no||1),n:a.n_items,type:a.type,state:"saved"};
   });
   /* ผลที่เพิ่งกดบันทึกในเครื่องนี้และเซิร์ฟเวอร์ยังไม่ยืนยัน ทับค่าจากฐานข้อมูลไว้ก่อน
      เพราะเป็นข้อมูลที่ใหม่กว่า และมีสถานะบอกว่ากำลังบันทึกหรือส่งไม่สำเร็จ */
   const loc=AS_LOCAL[sid]||{};
-  Object.keys(loc).forEach(cid=>{
-    const L=loc[cid];
+  Object.keys(loc).forEach(k=>{
+    const L=loc[k];
     if(!L||String(L.by)!==uid) return;
-    out[cid]={date:L.date,round:L.round,n:L.n,type:L.type,v:L.v,state:L.state};
+    if(rd&&Number(L.round)!==rd) return;
+    out[L.comp]={date:L.date,round:Number(L.round),n:L.n,type:L.type,v:L.v,state:L.state};
   });
   return out;
 }
@@ -4472,18 +4480,28 @@ function assessedByMe(sid){
     ผู้ประเมินจะเข้าใจว่าบันทึกไม่ติดแล้วกดซ้ำ จึงแสดงผลชั่วคราวพร้อมสถานะไว้ก่อน
     เก็บแยกจาก ASSESS_LOG เพื่อไม่ให้หน้าวิเคราะห์อื่นนับรายการที่เซิร์ฟเวอร์ยังไม่ยืนยัน
     เก็บคะแนนครบทุกข้อไว้ด้วย ถ้าส่งไม่สำเร็จจะกดส่งซ้ำได้โดยไม่ต้องให้คะแนนใหม่
-    โครงสร้าง {รหัสนักศึกษา: {รหัสสมรรถนะ: {state, by, date, round, n, v, type, scores, comment}}}
+    แยกกุญแจตามสมรรถนะและครั้งที่ประเมิน ผลของครั้งที่ 1 กับครั้งที่ 2 จึงไม่ทับกัน
+    โครงสร้าง {รหัสนักศึกษา: {"รหัสสมรรถนะ|ครั้งที่": {state, by, comp, round, date, n, v, type, scores, comment}}}
     state คือ saving กำลังส่ง · failed ส่งไม่สำเร็จ · saved เซิร์ฟเวอร์รับแล้ว · demo โหมดสาธิต */
 const AS_LOCAL={};
-const asLocalGet=(sid,cid)=>(AS_LOCAL[sid]||{})[cid]||null;
-function asLocalSet(sid,cid,o){ (AS_LOCAL[sid]=AS_LOCAL[sid]||{})[cid]=o; }
-function asLocalDrop(sid,cid){ if(AS_LOCAL[sid]) delete AS_LOCAL[sid][cid]; }
+const asLocalKey=(cid,round)=>String(cid)+"|"+Number(round||1);
+const asLocalGet=(sid,cid,round)=>(AS_LOCAL[sid]||{})[asLocalKey(cid,round)]||null;
+function asLocalSet(sid,cid,round,o){ (AS_LOCAL[sid]=AS_LOCAL[sid]||{})[asLocalKey(cid,round)]=o; }
+function asLocalDrop(sid,cid,round){ if(AS_LOCAL[sid]) delete AS_LOCAL[sid][asLocalKey(cid,round)]; }
 
-/** รอบที่ใช้บันทึกผล ต้องตรงกับค่าที่ส่งขึ้นเซิร์ฟเวอร์ จึงใช้ liveRound เมื่อเชื่อมต่อฐานข้อมูล */
+/** ครั้งที่ประเมินที่ควรเลือกให้ตั้งต้น คือครั้งล่าสุดที่มีข้อมูลของนักศึกษารายนั้น
+    คะแนนของอาจารย์นิเทศก์กับครูพี่เลี้ยงจะได้อยู่ครั้งเดียวกันแล้วนำมาเฉลี่ยกันได้
+    ผู้ประเมินเปลี่ยนเป็นครั้งอื่นเองได้ที่ขั้นตอนที่ 1 */
 function asRoundOf(sid){
   if(typeof liveOn==="function"&&liveOn()&&typeof liveRound==="function") return liveRound(sid);
   const r=(ASSESS_LOG[sid]||[]).map(a=>Number(a.round_no)||1);
   return r.length?Math.max.apply(null,r):1;
+}
+/** ชุดคะแนนของครั้งที่ประเมินที่เลือก ใช้แสดงคะแนนของครั้งนั้นแทนครั้งล่าสุดเสมอไป
+    คืนออบเจ็กต์ว่างเมื่อยังไม่มีข้อมูลของครั้งนั้น เพื่อไม่ให้ compScoreBy ถอยไปใช้ครั้งล่าสุด */
+function asRoundResp(sid,round,key){
+  const h=(HIST[sid]||[]).find((r,i)=>Number(r.no||i+1)===Number(round));
+  return h?(h[key]||{}):{};
 }
 
 /** สมรรถนะถัดไปที่ยังไม่ได้ประเมิน นับต่อจากตัวที่เลือกอยู่ แล้ววนกลับไปต้นรายการ
@@ -4503,9 +4521,9 @@ function asGoStep(k){
 
 /** ส่งผลการประเมินที่ค้างในเครื่องขึ้นฐานข้อมูลอีกครั้ง ใช้เมื่อครั้งก่อนส่งไม่สำเร็จ */
 function asRetry(cid){
-  const sid=S.asSid, L=asLocalGet(sid,cid);
+  const sid=S.asSid, L=asLocalGet(sid,cid,S.asRound);
   if(!L||!(typeof liveOn==="function"&&liveOn())) return;
-  L.state="saving"; S.asJust={sid,comp:cid}; render();
+  L.state="saving"; S.asJust={sid,comp:cid,round:L.round}; render();
   asLivePush({sid,comp:cid,type:L.type,scores:L.scores,comment:L.comment,round:L.round});
 }
 
@@ -4557,12 +4575,14 @@ function yearScopeTable(){
     สรุปว่าประเมินสมรรถนะใดไปแล้ว เหลืออีกกี่รายการ และพาไปประเมินรายการถัดไปได้ในคลิกเดียว
     วางรายการเป็นสองคอลัมน์แบบกะทัดรัด ทั้ง 17 สมรรถนะจึงอยู่ในจอเดียวโดยไม่ต้องเลื่อนหน้ายาว */
 function asStep3(x){
-  const {st,y,comps,c,mine,isStu}=x;
+  const {st,y,comps,c,mine,isStu,round}=x;
   const live=typeof liveOn==="function"&&liveOn();
   const rows=comps.map((cc,k)=>{
     const m=mine[cc.id], cf=cfgOf(FW,y,cc.id);
+    /* คะแนนของครั้งที่เลือก ไม่ใช่ครั้งล่าสุดเสมอไป มิฉะนั้นการย้อนดูครั้งที่ 1 จะแสดงคะแนนของครั้งที่ 3 */
+    const key=(raterByType(m&&m.type)||{}).key;
     const v=!m?null:(m.v!==undefined&&m.v!==null)?m.v
-      :compScoreBy(FW,st.id,cc,y,(raterByType(m.type)||{}).key);
+      :compScoreBy(FW,st.id,cc,y,key,asRoundResp(st.id,m.round,key));
     const state=!m?"todo":m.state==="saving"?"wait":m.state==="failed"?"fail":"done";
     return {cc,k,m,v,state,t:cf.target,nI:cf.indicators.length};
   });
@@ -4580,7 +4600,7 @@ function asStep3(x){
     const meta=!r.m
       ? `ยังไม่ได้ประเมิน · ${r.nI} ตัวชี้วัด · เป้าหมาย ${r.t}`
       : `คะแนน <b style="color:${hit?"var(--ok)":"var(--warn)"}">${fmt(r.v)}</b> / เป้าหมาย ${r.t}`
-        +` · ${esc(thaiDate(r.m.date))} · ครั้งที่ ${r.m.round}`
+        +` · ${esc(thaiDate(r.m.date))}`
         +(r.state==="wait"?" · กำลังบันทึกลงฐานข้อมูล…":r.state==="fail"?" · ส่งไม่สำเร็จ":"");
     const btn=r.state==="fail"
       ? `<button class="btn btn-danger btn-sm" data-act="asretry" data-v="${r.cc.id}">ส่งอีกครั้ง</button>`
@@ -4603,13 +4623,15 @@ function asStep3(x){
       ?`ส่งผลการประเมิน <b>${esc(jc.code)}</b> ไม่สำเร็จ คะแนนยังเก็บไว้ในเครื่องนี้ กดส่งอีกครั้งที่รายการด้านล่าง`
       :jm&&jm.state==="saving"
       ?`⏳ กำลังบันทึกผลการประเมิน <b>${esc(jc.code)}</b> ${esc(jc.th)} ลงฐานข้อมูล`
-      :`✅ บันทึกผลการประเมิน <b>${esc(jc.code)}</b> ${esc(jc.th)} เรียบร้อยแล้ว${live?"":" (โหมดสาธิต)"}`}</span>
+      :`✅ บันทึกผลการประเมิน <b>${esc(jc.code)}</b> ${esc(jc.th)} ครั้งที่ ${round} เรียบร้อยแล้ว${live?"":" (โหมดสาธิต)"}`}</span>
     ${nx?`<button class="btn btn-primary btn-sm" data-act="asnextcomp">ประเมินสมรรถนะถัดไป · ${esc(nx.code)} →</button>`
        :`<b>ประเมินครบทุกสมรรถนะแล้ว</b>`}</div>`;
 
   return `${just}<section class="card">
     <div class="card-h"><div><h3>ขั้นที่ 3 · สมรรถนะที่ท่านประเมิน${isStu?"ตนเอง":"นักศึกษารายนี้"}แล้ว</h3>
-      <p>${esc(st.name)} · ${esc(yearOf(FW,y).label)} · นับจากระเบียนจริงในฐานข้อมูล เฉพาะที่บันทึกโดยบัญชีของท่าน</p></div>
+      <p>${esc(st.name)} · ${esc(yearOf(FW,y).label)} · <b>${esc((ROUNDS[round-1]||{}).label||"ครั้งที่ "+round)}
+        ${esc((ROUNDS[round-1]||{}).when||"")}</b> · นับเฉพาะระเบียนของครั้งนี้ที่บันทึกโดยบัญชีของท่าน
+        · เปลี่ยนครั้งที่ประเมินได้ที่ขั้นที่ 1</p></div>
       <div class="pills">${pills}</div></div>
     <div class="card-b">
       <div class="asx-stats">
@@ -4634,11 +4656,11 @@ function asStep3(x){
    ผู้ประเมินมักให้คะแนนทีละหลายข้อแล้วสลับไปทำอย่างอื่น หรือรีเฟรชหน้าโดยไม่ตั้งใจ
    ถ้าเก็บคะแนนไว้ในหน่วยความจำอย่างเดียว คะแนนที่ให้ไปแล้วจะหายทั้งหมด
    จึงบันทึกแบบร่างลง localStorage ทุกครั้งที่กดคะแนน แล้วเรียกกลับเมื่อเปิดหน้าเดิมอีกครั้ง
-   แยกคีย์ตามผู้ประเมิน นักศึกษา สมรรถนะ และประเภทการประเมิน
+   แยกคีย์ตามผู้ประเมิน นักศึกษา สมรรถนะ ประเภทการประเมิน และครั้งที่ประเมิน
    แบบร่างของแต่ละชุดจึงไม่ปนกัน และผู้ประเมินคนอื่นบนเครื่องเดียวกันก็ไม่เห็นของกัน */
 function asDraftKey(){
   const me=(S.user&&S.user.id)||"anon";
-  return "ptru_as_"+[me,S.asSid||"",S.asComp||"",S.asType||""].join("|");
+  return "ptru_as_"+[me,S.asSid||"",S.asComp||"",S.asType||"",S.asRound||1].join("|");
 }
 function asDraftLoad(){
   try{ const raw=localStorage.getItem(asDraftKey()); if(!raw) return null;
@@ -4674,19 +4696,28 @@ function asDraftSync(){
       3 สมรรถนะที่ท่านประเมินนักศึกษารายนี้แล้ว
     แสดงครั้งละหนึ่งขั้นใต้แถบขั้นตอน หน้าจอจึงสั้นพอดีจอ ไม่ต้องเลื่อนผ่านส่วนที่ไม่เกี่ยวกับงานตรงหน้า */
 function assessPage(){
-  const stu=visStudents();
-  if(!stu.length) return card("การประเมิน","",`<div class="empty">ยังไม่มีนักศึกษาในระบบ</div>`);
+  const all=visStudents();
+  if(!all.length) return card("การประเมิน","",`<div class="empty">ยังไม่มีนักศึกษาในระบบ</div>`);
   const isStu=S.role==="Student";
   /* บัญชีใหม่เข้ามาในแท็บเดิม เริ่มที่ขั้นแรกเสมอ ไม่ค้างขั้นหรือนักศึกษาของผู้ใช้คนก่อน */
   const owner=String(S.user.linkTo||S.user.id)+"|"+S.role;
-  if(S.asOwner!==owner){ S.asOwner=owner; S.asStep=1; S.asJust=null; S.asFilter="all"; S.asSid=null; S.asComp=null; S.asKey=null; }
+  if(S.asOwner!==owner){ S.asOwner=owner; S.asStep=1; S.asJust=null; S.asFilter="all"; S.asSid=null; S.asComp=null; S.asKey=null;
+    S.asYear="all"; S.asRound=null; }
+  /* ชั้นปีที่เลือกไว้ใช้กรองรายชื่อนักศึกษา เพราะกรอบสมรรถนะ ตัวชี้วัด และระดับเป้าหมายต่างกันทุกชั้นปี
+     ผู้ประเมินที่ดูแลหลายชั้นปีจึงเลือกชั้นปีก่อน แล้วรายชื่อจะเหลือเฉพาะชั้นปีนั้น */
+  const years=[...new Set(all.map(s=>s.year).filter(v=>v!==undefined&&v!==null))].sort((a,b)=>a-b);
+  if(S.asYear!=="all"&&!years.some(v=>String(v)===String(S.asYear))) S.asYear="all";
+  const stu=S.asYear==="all"?all:all.filter(s=>String(s.year)===String(S.asYear));
   if(isStu){const me=userById(S.user.linkTo||S.user.id); S.asSid=me?me.id:stu[0].id;}
   /* ต้องเป็นนักศึกษาในขอบเขตของผู้ประเมินเท่านั้น ไม่ใช่แค่มีบัญชีอยู่ในระบบ */
   if(!S.asSid||!(isStu?userById(S.asSid):stu.some(s=>s.id===S.asSid))) S.asSid=stu[0].id;
   const st=userById(S.asSid), y=st.year, comps=activeComps(FW,y);
   if(!comps.length) return card("การประเมิน","",`<div class="empty">ชั้นปีนี้ยังไม่มีสมรรถนะที่เปิดใช้</div>`);
-  /* สมรรถนะที่บัญชีนี้ประเมินนักศึกษารายนี้ไปแล้วจริง อ่านจากระเบียนในฐานข้อมูล */
-  const mine=assessedByMe(st.id);
+  /* ครั้งที่ประเมินที่กำลังบันทึก ตั้งต้นเป็นครั้งล่าสุดที่นักศึกษารายนี้มีข้อมูล แล้วผู้ประเมินเปลี่ยนเองได้ */
+  if(!S.asRound) S.asRound=clamp(Math.round(numOr(asRoundOf(st.id),1)),1,ROUNDS.length);
+  const round=S.asRound;
+  /* สมรรถนะที่บัญชีนี้ประเมินนักศึกษารายนี้ไปแล้วจริงในครั้งที่เลือก อ่านจากระเบียนในฐานข้อมูล */
+  const mine=assessedByMe(st.id,round);
   /* ค่าตั้งต้นคือสมรรถนะแรกที่ท่านยังไม่ได้ประเมิน ผู้ประเมินส่วนใหญ่จึงกดเริ่มได้เลยโดยไม่ต้องไล่หา */
   if(!S.asComp||!comps.some(c=>c.id===S.asComp)) S.asComp=(comps.find(c=>!mine[c.id])||comps[0]).id;
   const c=comps.find(x=>x.id===S.asComp), cfg=cfgOf(FW,y,c.id);
@@ -4718,7 +4749,7 @@ function assessPage(){
   const typeChip=allowed.length>1?"":`<span class="tag tag-a">บันทึกในช่องทาง ${esc((allowed[0]||["","—"])[1])}</span>`;
 
   if(![1,2,3].includes(S.asStep)) S.asStep=1;
-  const x={stu,isStu,st,y,comps,c,cfg,mine,n,answered,done,result,typeField,typeChip,
+  const x={stu,all,years,isStu,st,y,round,comps,c,cfg,mine,n,answered,done,result,typeField,typeChip,
     nDone:comps.filter(cc=>mine[cc.id]).length};
   const body=S.asStep===1?asStep1(x):S.asStep===2?asStep2(x):asStep3(x);
   return `${asStepper(x)}${body}`;
@@ -4727,16 +4758,16 @@ function assessPage(){
 /** แถบขั้นตอน 1 → 2 → 3 ติดด้านบนของหน้าประเมินตลอดเวลา
     แต่ละขั้นบอกสถานะของตนเองด้วยข้อความสั้นและแถบความคืบหน้า กดเพื่อข้ามไปขั้นนั้นได้ทันที */
 function asStepper(x){
-  const {st,c,comps,mine,n,answered,nDone,isStu}=x;
+  const {st,c,comps,mine,n,answered,nDone,isStu,round}=x;
   const step=S.asStep, m=mine[c.id];
   /* ขั้นที่ 2 ถือว่าเสร็จเมื่อสมรรถนะที่เลือกถูกประเมินแล้ว และไม่มีคะแนนที่กำลังแก้ค้างอยู่ */
   const doneOf={1:step>1, 2:!!m&&answered===0&&m.state!=="failed", 3:comps.length>0&&nDone===comps.length};
   const sub={
-    1:isStu?`${c.code} · ${c.th}`:`${st.name} · ${c.code}`,
+    1:(isStu?`${c.code}`:`${st.name} · ${c.code}`)+` · ครั้งที่ ${round}`,
     2:answered?`ตอบแล้ว ${answered}/${n} ข้อ`
       :m?(m.state==="saving"?"กำลังบันทึก…":m.state==="failed"?"ส่งไม่สำเร็จ":"ประเมินแล้ว")
       :`${n} ตัวชี้วัด · ยังไม่เริ่ม`,
-    3:`ประเมินแล้ว ${nDone}/${comps.length} สมรรถนะ`};
+    3:`ครั้งที่ ${round} · ประเมินแล้ว ${nDone}/${comps.length} สมรรถนะ`};
   const bar={2:n?Math.round(answered/n*100):0, 3:comps.length?Math.round(nDone/comps.length*100):0};
   const names=[[1,"ตั้งค่าแบบประเมิน","ตั้งค่า"],[2,"แบบประเมิน","ประเมิน"],[3,"สมรรถนะที่ประเมินแล้ว","ประเมินแล้ว"]];
   const items=names.map(([k,lg,sm])=>{
@@ -4756,8 +4787,25 @@ function asStepper(x){
 /** ขั้นที่ 1 · ตั้งค่าแบบประเมิน เลือกนักศึกษาและสมรรถนะ
     ซ้ายคือตัวเลือก ขวาคือรายละเอียดของสิ่งที่เลือก ผู้ประเมินจึงตรวจได้ก่อนเริ่มว่าเลือกถูกคนถูกด้าน */
 function asStep1(x){
-  const {stu,isStu,st,y,comps,c,cfg,mine,n,answered,typeField,typeChip,nDone}=x;
+  const {stu,all,years,isStu,st,y,round,comps,c,cfg,mine,n,answered,typeField,typeChip,nDone}=x;
   const yc=yearOf(FW,y), m=mine[c.id];
+  /* ชั้นปี · กรองรายชื่อนักศึกษา และบอกจำนวนคนในแต่ละชั้นปีตามขอบเขตของผู้ประเมิน
+     ชั้นปีเป็นข้อมูลของนักศึกษาเอง จึงเลือกเพื่อคัดรายชื่อ ไม่ใช่เพื่อเปลี่ยนชั้นปีของผู้เรียน */
+  const yearField=(isStu||years.length<2)?"":`<div class="field"><label for="as_year">ชั้นปี</label>
+    <select class="inp" id="as_year" data-act="asyear">
+      <option value="all" ${S.asYear==="all"?"selected":""}>ทุกชั้นปี (${all.length} คน)</option>
+      ${years.map(v=>{const yy=yearOf(FW,Number(v)), nv=all.filter(s=>String(s.year)===String(v)).length;
+        return `<option value="${v}" ${String(S.asYear)===String(v)?"selected":""}>${esc(yy?yy.label:"ชั้นปีที่ "+v)} (${nv} คน)</option>`;}).join("")}
+    </select></div>`;
+  /* ครั้งที่ประเมิน · ค่านี้ถูกบันทึกลงคอลัมน์ round_no ของชีต Assessments โดยตรง
+     ผลของแต่ละครั้งจึงแยกกัน ดูพัฒนาการรายครั้งได้ และแก้ครั้งที่ผ่านมาได้โดยไม่ทับครั้งล่าสุด */
+  const roundField=`<div class="field"><label for="as_round">ครั้งที่ประเมิน</label>
+    <select class="inp" id="as_round" data-act="asround">${ROUNDS.map((r,i)=>{
+      const no=i+1, done=assessedByMe(st.id,no);
+      const k=comps.filter(cc=>done[cc.id]).length;
+      return `<option value="${no}" ${round===no?"selected":""}>${esc(r.label)} · ${esc(r.when)}${k?` — ประเมินแล้ว ${k}/${comps.length}`:" — ยังไม่ได้ประเมิน"}</option>`;
+    }).join("")}</select>
+    <div class="hint">บันทึกผลลงครั้งที่เลือกนี้ · เปลี่ยนครั้งเพื่อประเมินรอบใหม่หรือย้อนไปแก้ครั้งก่อน</div></div>`;
   const nInds=comps.reduce((s,cc)=>s+cfgOf(FW,y,cc.id).indicators.length,0);
   const off=FW.competencies.length-comps.length;
   const pct=comps.length?Math.round(nDone/comps.length*100):0;
@@ -4765,21 +4813,23 @@ function asStep1(x){
   const draftAt=S.asDraftAt?new Date(S.asDraftAt):null;
   const startLabel=answered>0&&answered<n?`ประเมินต่อจากแบบร่าง (${answered}/${n} ข้อ) →`
     :n>0&&answered===n?"ตรวจทานและบันทึก →"
-    :m?"ประเมินซ้ำ →":"เริ่มประเมิน →";
+    :m?`ประเมินซ้ำครั้งที่ ${round} →`:`เริ่มประเมินครั้งที่ ${round} →`;
   const init=esc((st.name||"?").trim().charAt(0));
-  const status=!m?`<span class="tag tag-n">ยังไม่ได้ประเมิน</span>`
+  const status=!m?`<span class="tag tag-n">ยังไม่ได้ประเมินในครั้งที่ ${round}</span>`
     :m.state==="saving"?`<span class="tag tag-warn">⏳ กำลังบันทึกลงฐานข้อมูล</span>`
     :m.state==="failed"?`<span class="tag tag-risk">ส่งไม่สำเร็จ · ส่งซ้ำได้ที่ขั้นที่ 3</span>`
-    :`<span class="tag tag-ok">✓ ท่านประเมินแล้ว</span>
-      <span class="sub">${esc(thaiDate(m.date))} · ครั้งที่ ${m.round} · บันทึกใหม่จะเป็นการประเมินซ้ำในรอบปัจจุบัน</span>`;
+    :`<span class="tag tag-ok">✓ ท่านประเมินแล้วในครั้งที่ ${m.round}</span>
+      <span class="sub">${esc(thaiDate(m.date))} · บันทึกใหม่จะเป็นการประเมินซ้ำของครั้งที่ ${round}</span>`;
 
   const form=`<section class="card"><div class="card-h"><div>
       <h3>ขั้นที่ 1 · ตั้งค่าแบบประเมินสมรรถนะ</h3>
       <p>${isStu?"เลือกสมรรถนะที่ต้องการประเมินตนเอง":"เลือกนักศึกษาและสมรรถนะที่ต้องการประเมิน"} แล้วกดเริ่มประเมิน</p></div></div>
     <div class="card-b">
-      ${isStu?"":`<div class="field"><label for="as_sid">นักศึกษา <span class="sub">· ${stu.length} คนในขอบเขตของท่าน</span></label>
+      ${yearField?`<div class="grid g2" style="gap:.8rem">${yearField}${roundField}</div>`:roundField}
+      ${isStu?"":`<div class="field"><label for="as_sid">นักศึกษา
+        <span class="sub">· ${stu.length} คน${S.asYear==="all"?"ในขอบเขตของท่าน":"ใน"+esc((yearOf(FW,Number(S.asYear))||{}).label||"ชั้นปีนี้")}</span></label>
         <select class="inp" id="as_sid" data-act="assid">${stu.map(s=>`<option value="${s.id}" ${s.id===S.asSid?"selected":""}>${esc(s.program||"")} ปี ${s.year} · ${esc(s.name)}</option>`).join("")}</select></div>`}
-      <div class="field"><label for="as_comp">สมรรถนะ <span class="sub">· ✓ ประเมินแล้ว ◻ ยังไม่ได้ประเมิน</span></label>
+      <div class="field"><label for="as_comp">สมรรถนะ <span class="sub">· ✓ ประเมินแล้วในครั้งที่ ${round} ◻ ยังไม่ได้ประเมิน</span></label>
         <select class="inp" id="as_comp" data-act="ascomp">${comps.map(cc=>`<option value="${cc.id}" ${cc.id===c.id?"selected":""}>${mine[cc.id]?"✓":"◻"} ${esc(cc.code)} · ${esc(cc.th)}</option>`).join("")}</select></div>
       ${typeField}
       ${typeChip?`<div class="row" style="margin-top:.8rem">${typeChip}</div>`:""}
@@ -4801,7 +4851,8 @@ function asStep1(x){
         <div style="min-width:0"><div class="nm">${esc(st.name)}</div>
           <div class="sub">${[st.code&&st.code!=="—"?"รหัส "+esc(st.code):"",esc(st.program||""),esc(yc.label)].filter(Boolean).join(" · ")}</div></div>
       </div>
-      <div class="asx-prog"><span>${isStu?"ประเมินตนเองแล้ว":"ท่านประเมินแล้ว"} ${nDone}/${comps.length} สมรรถนะ</span>
+      <div class="asx-prog"><span>${isStu?"ประเมินตนเองแล้ว":"ท่านประเมินแล้ว"} ${nDone}/${comps.length} สมรรถนะ
+          <span class="sub">· ครั้งที่ ${round}</span></span>
         <span class="bar"><i style="width:${pct}%"></i></span><b>${pct}%</b></div>
       <div class="asx-kv">
         <span class="tag tag-a">${esc(c.code)}</span>
@@ -4820,10 +4871,10 @@ function asStep1(x){
     หัวแบบประเมินบอกว่ากำลังประเมินใครในสมรรถนะใด โดยไม่ต้องย้อนไปดูขั้นแรก
     ข้อเสนอแนะและคำแนะนำจากระบบพับเก็บได้ หน้าจอจึงเหลือแค่ส่วนที่ต้องใช้ให้คะแนน */
 function asStep2(x){
-  const {isStu,st,c,cfg,mine,n,answered,done,result}=x;
+  const {isStu,st,c,cfg,mine,n,answered,done,result,round}=x;
   const m=mine[c.id];
   const part=answered&&!done?mean(cfg.indicators.map(i=>S.asScores[i.id]).filter(v=>v!==undefined)):null;
-  const meta={code:c.code,name:c.th,target:cfg.target,isStu,
+  const meta={code:c.code,name:c.th,target:cfg.target,isStu,round,
     who:isStu?"":`${st.name} · ${st.program||""} ปี ${st.year}`,
     prevDate:m&&m.state!=="failed"?thaiDate(m.date):""};
 
@@ -4894,8 +4945,9 @@ function assessWizard(cfg,done,meta){
      ปุ่มเปลี่ยนพากลับไปขั้นที่ 1 ได้ทันที เหมือนกดขั้นที่ 1 บนแถบขั้นตอน */
   const mt=meta||{};
   const title=mt.code?`<span class="tag tag-a">${esc(mt.code)}</span> ${esc(mt.name||"")}`:"แบบประเมินสมรรถนะ";
-  const subBits=[mt.who?esc(mt.who):"",mt.target!==undefined?`เป้าหมายระดับ ${mt.target}`:"",
-    `ตัวชี้วัดที่ ${idx+1} จาก ${n}`,mt.prevDate?`เคยประเมินแล้ว ${esc(mt.prevDate)}`:""].filter(Boolean);
+  const subBits=[mt.who?esc(mt.who):"",mt.round?`ประเมินครั้งที่ ${mt.round}`:"",
+    mt.target!==undefined?`เป้าหมายระดับ ${mt.target}`:"",
+    `ตัวชี้วัดที่ ${idx+1} จาก ${n}`,mt.prevDate?`เคยประเมินครั้งนี้แล้ว ${esc(mt.prevDate)}`:""].filter(Boolean);
   return card("","",`<div class="asw-head">
       <div class="asw-ico">📋</div>
       <div style="min-width:0;flex:1 1 16rem"><div class="asw-ttl">${title}</div>
@@ -9823,7 +9875,7 @@ document.addEventListener("click",e=>{
     /* ไปสมรรถนะถัดไปที่ยังไม่ได้ประเมิน นับต่อจากตัวที่เพิ่งทำ */
     case "asnextcomp": {
       const st=userById(S.asSid); if(!st){ re=false; break; }
-      const nx=asNextTodo(activeComps(FW,st.year),assessedByMe(st.id),S.asComp);
+      const nx=asNextTodo(activeComps(FW,st.year),assessedByMe(st.id,S.asRound),S.asComp);
       if(!nx){ re=false; break; }
       S.asComp=nx.id; S.asKey=null; S.asSaved=false; S.asJust=null;
       asGoStep(2); break; }
@@ -9838,11 +9890,12 @@ document.addEventListener("click",e=>{
       if(cm) S.asComment=cm.value;
       /* จำผลชุดนี้ไว้ในเครื่องก่อน ขั้นที่ 3 จึงแสดงผลได้ทันทีโดยไม่ต้องรอเซิร์ฟเวอร์ตอบ
          ถ้าส่งไม่สำเร็จ คะแนนยังอยู่ให้กดส่งซ้ำได้ ไม่หายไปพร้อมแบบร่างที่ถูกลบ */
+      const round=clamp(Math.round(numOr(S.asRound,1)),1,ROUNDS.length);
       if(st&&vals.length)
-        asLocalSet(st.id,S.asComp,{by:String(S.user.linkTo||S.user.id),state:live?"saving":"demo",
-          date:localISODate(),round:asRoundOf(st.id),n:vals.length,v:mean(vals),type:S.asType,
+        asLocalSet(st.id,S.asComp,round,{by:String(S.user.linkTo||S.user.id),state:live?"saving":"demo",
+          comp:S.asComp,round,date:localISODate(),n:vals.length,v:mean(vals),type:S.asType,
           scores:Object.assign({},S.asScores),comment:S.asComment||"",at:new Date().toISOString()});
-      S.asSaved=true; S.asJust={sid:S.asSid,comp:S.asComp}; S.asFilter="all";
+      S.asSaved=true; S.asJust={sid:S.asSid,comp:S.asComp,round}; S.asFilter="all";
       /* บันทึกแล้ว แบบร่างในเครื่องไม่จำเป็นอีก ลบทิ้งกันสับสนกับการประเมินรอบถัดไป */
       asDraftClear(); S.asKey=null; S.asRestored=false; S.asComment=""; S.asCmtOpen=false;
       /* โหมดจริงจะมี livePush แจ้งสถานะการบันทึกให้เอง ตรงนี้จึงแจ้งเฉพาะโหมดสาธิต */
@@ -9940,6 +9993,12 @@ document.addEventListener("change",e=>{
     case "lecscope": S.lecScope=val2; break;
     /* เปลี่ยนชุดที่กำลังประเมิน ล้างคีย์แบบร่างเพื่อให้เรียกแบบร่างของชุดใหม่ขึ้นมา
        ไม่ต้องล้างคะแนนเอง เพราะ asDraftSync จะตั้งค่าให้ตามแบบร่างของชุดนั้น */
+    /* เลือกชั้นปี · กรองรายชื่อนักศึกษา แล้วให้ assessPage เลือกคนแรกของชั้นปีนั้นให้เอง
+       ล้างสมรรถนะและคีย์แบบร่าง เพราะกรอบสมรรถนะของแต่ละชั้นปีเป็นคนละชุดกัน */
+    case "asyear": S.asYear=val2; S.asSid=null; S.asComp=null; S.asKey=null; S.asSaved=false; S.asJust=null; break;
+    /* เลือกครั้งที่ประเมิน · ค่านี้ถูกบันทึกลง round_no และใช้ตัดสินว่าสมรรถนะใดประเมินครบแล้วในครั้งนั้น */
+    case "asround": S.asRound=clamp(Math.round(numOr(val2,1)),1,ROUNDS.length);
+      S.asKey=null; S.asSaved=false; S.asJust=null; break;
     case "assid": S.asSid=val2; S.asComp=null; S.asKey=null; S.asSaved=false; S.asJust=null; break;
     case "ascomp": S.asComp=val2; S.asKey=null; S.asSaved=false; S.asJust=null; break;
     case "astype": S.asType=val2; S.asKey=null; S.asSaved=false; S.asJust=null; break;
@@ -11152,19 +11211,21 @@ function asLivePush(p) {
     'บันทึกผลการประเมินลงฐานข้อมูลแล้ว',
     async () => {
       ok = true;
-      const L = asLocalGet(p.sid, p.comp);
+      const L = asLocalGet(p.sid, p.comp, p.round);
       if (L) L.state = 'saved';
       await liveStudent(p.sid, false);
       EDM_CACHE = null;
       /* ข้อมูลจากฐานข้อมูลมีรายการนี้แล้ว จึงเลิกแสดงผลชั่วคราว
+         ต้องตรงทั้งสมรรถนะและครั้งที่ประเมิน มิฉะนั้นระเบียนของครั้งอื่นจะถูกนับว่าใช่
          ถ้าดึงใหม่ไม่สำเร็จ ยังคงผลชั่วคราวไว้ในสถานะบันทึกแล้ว ไม่ให้รายการหายไปจากหน้าจอ */
       const me = String(S.user ? (S.user.linkTo || S.user.id) : '');
       const got = (ASSESS_LOG[p.sid] || []).some(a => a.comp_id === p.comp &&
+        Number(a.round_no || 1) === Number(p.round) &&
         String(a.assessor_id) === me && (!L || String(a.date) >= String(L.date)));
-      if (got) asLocalDrop(p.sid, p.comp);
+      if (got) asLocalDrop(p.sid, p.comp, p.round);
     }).then(() => {
       if (ok) return;
-      const L = asLocalGet(p.sid, p.comp);
+      const L = asLocalGet(p.sid, p.comp, p.round);
       if (L) L.state = 'failed';
       render();
     });
@@ -11414,6 +11475,7 @@ document.addEventListener('click', e => {
     LIVE.intent = {act: a, id: v, data: {sid: evidenceOwner()}};
   } else if (a === 'assave') {
     LIVE.intent = {act: a, data: {sid: S.asSid, comp: S.asComp, type: S.asType,
+      round: S.asRound,
       scores: Object.assign({}, S.asScores),
       /* ข้อเสนอแนะที่ผู้ประเมินพิมพ์ไว้ เดิมไม่เคยถูกส่งขึ้นฐานข้อมูลเลย
          ทั้งที่ชีต Assessments มีคอลัมน์ comment และ api_assessSubmit รับค่านี้อยู่แล้ว */
@@ -11513,11 +11575,11 @@ document.addEventListener('click', e => {
       break;
     case 'assave': {
       if (!d.sid || !d.comp || !Object.keys(d.scores).length) break;
-      const L = asLocalGet(d.sid, d.comp);
+      /* ครั้งที่ประเมินมาจากที่ผู้ประเมินเลือกไว้ในขั้นที่ 1 ไม่ใช่ครั้งล่าสุดที่เดาจากข้อมูลเดิม */
+      const round = Number(d.round) || liveRound(d.sid);
       asLivePush({sid: d.sid, comp: d.comp,
         type: d.type || (S.role === 'Mentor' ? 'mentor' : 'lecturer'),
-        scores: d.scores, comment: d.comment || '',
-        round: L ? L.round : liveRound(d.sid)});
+        scores: d.scores, comment: d.comment || '', round: round});
       break;
     }
     case 'pfsave': {
