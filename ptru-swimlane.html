@@ -1,0 +1,485 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Swim-lane ระบบ PTRU-DCAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* เอกสารประกอบงานวิจัย · หน้าเดียว อ่านบนจอและพิมพ์ลงกระดาษได้
+   โครง: หัวเรื่อง → แถบเลือกวงจร → แผนภาพ swim-lane (เลื่อนแนวนอนได้) → คำอธิบายสัญลักษณ์ → ขั้นตอนเป็นข้อความ */
+:root{
+  --bg:#F5F7FC; --surface:#FFFFFF; --ink:#16213F; --muted:#5B6886; --line:#D7DEEC; --line-soft:#E8EDF6;
+  --task:#3B5BA9; --task-bg:#FFFFFF;
+  --auto:#B08030; --auto-bg:#FDF8EE; --auto-ink:#80601F;
+  --dec:#6B5BC9; --dec-bg:#F7F5FE;
+  --flow:#1C7A63; --flow-ink:#FFFFFF;
+  --lane1:#EDF1FA; --lane2:#F4F1FB; --lane3:#ECF6F1; --lane4:#FBF6EB;
+  --ff-head:'Noto Serif Thai',Georgia,serif;
+  --ff-body:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1322; --surface:#141C2E; --ink:#E8EDF8; --muted:#9BA8C4; --line:#2B3651; --line-soft:#212B42;
+    --task:#93ABF2; --task-bg:#172034;
+    --auto:#D8A94C; --auto-bg:#241D11; --auto-ink:#E9C77E;
+    --dec:#AA9CF2; --dec-bg:#1C1A32;
+    --flow:#36A98B; --flow-ink:#06231B;
+    --lane1:#161F35; --lane2:#1A1832; --lane3:#122320; --lane4:#221C11;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1322; --surface:#141C2E; --ink:#E8EDF8; --muted:#9BA8C4; --line:#2B3651; --line-soft:#212B42;
+  --task:#93ABF2; --task-bg:#172034;
+  --auto:#D8A94C; --auto-bg:#241D11; --auto-ink:#E9C77E;
+  --dec:#AA9CF2; --dec-bg:#1C1A32;
+  --flow:#36A98B; --flow-ink:#06231B;
+  --lane1:#161F35; --lane2:#1A1832; --lane3:#122320; --lane4:#221C11;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ff-body);line-height:1.65;
+  -webkit-font-smoothing:antialiased}
+.page{max-width:72rem;margin:0 auto;padding-block:2.2rem 3rem;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:1.4rem}
+
+.eyebrow{font-size:.78rem;letter-spacing:.06em;color:var(--muted);text-transform:none}
+h1{font-family:var(--ff-head);font-size:1.6rem;line-height:1.35;margin:.25rem 0 0;text-wrap:balance}
+.lede{color:var(--muted);font-size:.93rem;margin:.45rem 0 0;max-width:62ch}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between}
+.tabs{display:flex;flex-wrap:wrap;gap:.45rem;padding:.4rem;background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;width:fit-content;max-width:100%}
+.tabs button{font:inherit;font-size:.88rem;color:var(--muted);background:none;border:1px solid transparent;
+  border-radius:999px;padding:.45rem .95rem;cursor:pointer;display:flex;align-items:center;gap:.45rem;min-width:0}
+.tabs button:hover{color:var(--ink);background:var(--line-soft)}
+.tabs button[aria-selected="true"]{background:var(--lane1);border-color:var(--task);color:var(--ink);font-weight:600}
+.tabs button:focus-visible{outline:2px solid var(--task);outline-offset:2px}
+.tabs .no{width:1.35rem;height:1.35rem;flex:none;border-radius:50%;display:grid;place-items:center;
+  font-size:.74rem;font-weight:600;background:var(--line-soft);color:var(--muted)}
+.tabs button[aria-selected="true"] .no{background:var(--task);color:#fff}
+
+.fit{font:inherit;font-size:.84rem;color:var(--muted);background:var(--surface);cursor:pointer;
+  border:1px solid var(--line);border-radius:999px;padding:.5rem .95rem;white-space:nowrap}
+.fit:hover{color:var(--ink);border-color:var(--task)}
+.fit[aria-pressed="true"]{color:var(--ink);border-color:var(--task);background:var(--lane1);font-weight:600}
+.fit:focus-visible{outline:2px solid var(--task);outline-offset:2px}
+
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.fig-head{padding:1rem 1.1rem .2rem}
+.fig-head h2{font-family:var(--ff-head);font-size:1.08rem;margin:0}
+.fig-head p{margin:.3rem 0 0;color:var(--muted);font-size:.86rem;max-width:68ch}
+.scroll{overflow-x:auto;padding:.6rem .9rem 1rem}
+.scroll svg{display:block;max-width:none}
+.scroll.fitw{overflow-x:hidden}
+.scroll.fitw svg{width:100%;height:auto;max-width:100%}
+figcaption{border-top:1px solid var(--line-soft);padding:.8rem 1.1rem;color:var(--muted);font-size:.84rem}
+figcaption b{color:var(--ink);font-weight:600}
+
+.legend{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;align-items:center;justify-content:center;
+  padding:.85rem 1.1rem;border-top:1px solid var(--line-soft);font-size:.83rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:.5rem}
+.key{width:2.1rem;height:1.1rem;flex:none;border-radius:4px;border:1.5px solid var(--task);background:var(--task-bg)}
+.key.auto{border-style:dashed;border-color:var(--auto);background:var(--auto-bg)}
+.key.dec{width:1.3rem;height:1.3rem;border-radius:2px;border-color:var(--dec);background:var(--dec-bg);
+  transform:rotate(45deg)}
+.key.flow{border-radius:999px;background:var(--flow);border-color:var(--flow)}
+
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+summary{cursor:pointer;padding:.85rem 1.1rem;font-weight:600;font-size:.92rem;list-style:none;
+  display:flex;align-items:center;gap:.5rem}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted);transition:transform .15s ease}
+details[open] summary::before{transform:rotate(90deg)}
+.steps{padding:0 1.1rem 1.1rem;margin:0;display:grid;gap:.5rem}
+.steps li{display:grid;grid-template-columns:auto 1fr;gap:.6rem;align-items:baseline;font-size:.89rem;min-width:0}
+.steps .who{font-size:.74rem;font-weight:600;padding:.12rem .5rem;border-radius:999px;white-space:nowrap;
+  border:1px solid var(--line);color:var(--muted);background:var(--lane1)}
+.steps .who.sys{border-style:dashed;border-color:var(--auto);color:var(--auto-ink);background:var(--auto-bg)}
+.note{color:var(--muted);font-size:.82rem;text-align:center;margin:0}
+.print-only{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  /* พิมพ์ทีเดียวได้ครบทั้งสี่แผนภาพ พร้อมขั้นตอนเป็นข้อความใต้ภาพ */
+  :root{--bg:#fff;--surface:#fff}
+  body{background:#fff}
+  .toolbar,details,.note,#fig{display:none!important}
+  .print-only{display:grid;gap:0}
+  .page{max-width:none;padding:0;gap:1rem}
+  .print-only figure{break-inside:avoid;break-after:page;border:1px solid #c3c9d6;border-radius:0}
+  .print-only figure:last-child{break-after:auto}
+  .scroll{overflow:visible;padding:.4rem .5rem .6rem}
+  .scroll svg{width:100%!important;height:auto!important;max-width:100%!important}
+  .steps{display:grid}
+}
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">โครงการวิจัย · ทุนสนับสนุนจากกองทุนสนับสนุนงานวิจัย มหาวิทยาลัยราชภัฏเลย ประจำปีงบประมาณ 2569</div>
+    <h1>ใครทำอะไรในแต่ละขั้นตอน — แผนภาพ Swim-lane ของระบบ PTRU-DCAI</h1>
+    <p class="lede">ต่อจาก Design Framework ของระบบ แผนภาพชุดนี้แยกบทบาทผู้เกี่ยวข้องออกเป็นแถว
+      แต่ละแถวคือผู้เกี่ยวข้องหนึ่งฝ่าย อ่านจากซ้ายไปขวาตามลำดับเวลา
+      กล่องเส้นประสีทองคือสิ่งที่ระบบทำให้อัตโนมัติโดยผู้ใช้ไม่ต้องสั่ง</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="เลือกวงจรการทำงาน" id="tabs"></div>
+    <button class="fit" type="button" id="fitBtn" aria-pressed="false">ย่อให้เห็นทั้งแผนภาพ</button>
+  </div>
+
+  <figure id="fig">
+    <div class="fig-head"><h2 id="figTitle"></h2><p id="figSub"></p></div>
+    <div class="scroll" id="figScroll"></div>
+    <div class="legend">
+      <span><i class="key"></i>งานที่ผู้ใช้ทำเอง</span>
+      <span><i class="key auto"></i>ระบบทำให้อัตโนมัติ</span>
+      <span><i class="key dec"></i>จุดตัดสินใจของระบบ</span>
+      <span><i class="key flow"></i>เริ่มต้น / สิ้นสุดวงจร</span>
+    </div>
+    <figcaption id="figCap"></figcaption>
+  </figure>
+
+  <details id="stepBox">
+    <summary>รายละเอียดขั้นตอนเป็นข้อความ (ใช้เป็นคำบรรยายใต้ภาพในเล่มรายงานได้)</summary>
+    <ol class="steps" id="steps"></ol>
+  </details>
+
+  <p class="note">สั่งพิมพ์หน้านี้จะได้ครบทั้งสี่แผนภาพ หน้าละหนึ่งวงจร พร้อมขั้นตอนเป็นข้อความใต้ภาพ ·
+    ปรับเลขที่ภาพให้ตรงกับเล่มรายงานเมื่อนำไปใช้</p>
+
+  <div class="print-only" id="printAll" aria-hidden="true"></div>
+</div>
+
+<script>
+/* ---------- ผู้เกี่ยวข้อง (แถวของแผนภาพ) ---------- */
+const LANES = [
+  {id:'admin', label:['ผู้ดูแลระบบ /','ประธานหลักสูตร'], tint:'var(--lane1)', chip:'ผู้ดูแลระบบ'},
+  {id:'rater', label:['อาจารย์นิเทศก์ /','ครูพี่เลี้ยง'],   tint:'var(--lane2)', chip:'ผู้ประเมิน'},
+  {id:'stu',   label:['นักศึกษาครู'],                      tint:'var(--lane3)', chip:'นักศึกษา'},
+  {id:'sys',   label:['ระบบ PTRU-DCAI'],                   tint:'var(--lane4)', chip:'ระบบ'},
+];
+const L = {admin:0, rater:1, stu:2, sys:3};
+
+/* ---------- วงจรการทำงานทั้งสี่ ---------- */
+const FLOWS = [
+{
+  id:'assess', tab:'วงจรการประเมินสมรรถนะ',
+  title:'แผนภาพที่ 1 · วงจรการประเมินสมรรถนะ ตั้งแต่ตั้งค่ากรอบจนถึงรายงานผล',
+  sub:'ผู้ดูแลระบบกำหนดกรอบสมรรถนะรายชั้นปี ผู้ประเมินสามฝ่ายให้คะแนนรายตัวชี้วัดในครั้งที่กำหนด ระบบรวมคะแนนตามกติกาสามฝ่ายและส่งผลกลับถึงผู้เรียน',
+  cap:'<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> ผู้ประเมินทำเพียงสามขั้นคือตั้งค่า ให้คะแนน และกดบันทึก ส่วนการเก็บแบบร่าง การผูกคะแนนกับผู้ประเมินและครั้งที่ประเมิน และการรวมคะแนนสามฝ่าย เป็นงานที่ระบบทำให้ทั้งหมด',
+  nodes:[
+    {id:'a1', lane:'admin', col:0, kind:'start', t:['ตั้งค่ากรอบสมรรถนะ','รายชั้นปีที่ 1–4']},
+    {id:'a2', lane:'sys',   col:1, kind:'auto',  t:['บันทึกสมรรถนะที่เปิดใช้','ตัวชี้วัด และเป้าหมาย','มีผลกับผู้ประเมินทันที']},
+    {id:'a3', lane:'rater', col:2, kind:'task',  t:['ขั้นที่ 1 เลือกชั้นปี','ครั้งที่ประเมิน นักศึกษา','และสมรรถนะ']},
+    {id:'a4', lane:'rater', col:3, kind:'task',  t:['ขั้นที่ 2 ให้คะแนน','ทีละตัวชี้วัด 5 ระดับ']},
+    {id:'a5', lane:'sys',   col:3, kind:'auto',  t:['บันทึกแบบร่างทุกครั้ง','ที่กดคะแนน']},
+    {id:'a6', lane:'rater', col:4, kind:'task',  t:['ขั้นที่ 3 บันทึก','ผลการประเมิน']},
+    {id:'a7', lane:'sys',   col:4, kind:'auto',  t:['เก็บคะแนนรายตัวชี้วัด','พร้อมรหัสผู้ประเมิน','และครั้งที่ประเมิน']},
+    {id:'a8', lane:'stu',   col:2, kind:'task',  t:['ประเมินตนเองด้วย','แบบประเมินชุดเดียวกัน']},
+    {id:'a9', lane:'sys',   col:5, kind:'dec',   t:['ประเมินครบทุก','สมรรถนะหรือยัง']},
+    {id:'a10',lane:'sys',   col:6, kind:'auto',  t:['รวมคะแนนสามฝ่าย','นิเทศก์ พี่เลี้ยง ตนเอง','แล้วเทียบระดับเป้าหมาย']},
+    {id:'a11',lane:'stu',   col:7, kind:'end',   t:['ดูผลและแผน','พัฒนารายบุคคล']},
+    {id:'a12',lane:'admin', col:7, kind:'end',   t:['ดูรายงานภาพรวม','และความสอดคล้อง','ของผู้ประเมิน']},
+  ],
+  edges:[
+    ['a1','a2'], ['a2','a3'], ['a2','a8'], ['a3','a4'], ['a4','a5'], ['a5','a6'],
+    ['a6','a7'], ['a8','a7'], ['a7','a9'],
+    ['a9','a3','ยังไม่ครบ · ประเมินสมรรถนะถัดไป',true],
+    ['a9','a10','ครบแล้ว'], ['a10','a11'], ['a10','a12'],
+  ],
+  steps:[
+    ['ผู้ดูแลระบบ','เปิดใช้สมรรถนะของแต่ละชั้นปี กำหนดตัวชี้วัดและระดับเป้าหมาย'],
+    ['ระบบ','บันทึกค่าที่ตั้งลงฐานข้อมูลทันที แบบประเมินของผู้ประเมินทุกคนเปลี่ยนตามโดยไม่ต้องแจ้งเวียน'],
+    ['ผู้ประเมิน','ขั้นที่ 1 เลือกชั้นปี ครั้งที่ประเมิน (ครั้งที่ 1–3) นักศึกษา และสมรรถนะที่จะประเมิน'],
+    ['ผู้ประเมิน','ขั้นที่ 2 ให้คะแนนทีละตัวชี้วัดตามเกณฑ์ 5 ระดับ พร้อมคำอธิบายระดับของตัวชี้วัดนั้น'],
+    ['ระบบ','บันทึกแบบร่างลงเครื่องทุกครั้งที่กดคะแนน ปิดหน้าไปแล้วกลับมาทำต่อได้โดยคะแนนไม่หาย'],
+    ['ผู้ประเมิน','ขั้นที่ 3 กดบันทึกผลการประเมิน พร้อมข้อเสนอแนะเพื่อการพัฒนา (ไม่บังคับ)'],
+    ['ระบบ','บันทึกคะแนนรายตัวชี้วัดลงฐานข้อมูล ผูกกับรหัสผู้ประเมิน ครั้งที่ประเมิน และช่องทางตามบทบาท'],
+    ['นักศึกษา','ประเมินตนเองด้วยแบบประเมินชุดเดียวกัน คะแนนเข้าช่องทางประเมินตนเอง'],
+    ['ระบบ','ตรวจว่าประเมินครบทุกสมรรถนะของครั้งนั้นหรือยัง ถ้ายังไม่ครบจะเสนอสมรรถนะถัดไปให้ทันที'],
+    ['ระบบ','รวมคะแนนตามกติกา (อาจารย์นิเทศก์ + ครูพี่เลี้ยง + ประเมินตนเอง) ÷ 3 แล้วเทียบกับระดับเป้าหมายของชั้นปี'],
+    ['นักศึกษา','ดูผลรายสมรรถนะ พัฒนาการรายรอบ และแผนพัฒนารายบุคคล'],
+    ['ผู้ดูแลระบบ','ดูรายงานภาพรวมของคณะ และตรวจความสอดคล้องระหว่างผู้ประเมิน'],
+  ],
+},
+{
+  id:'exam', tab:'วงจรแบบทดสอบวัดสมรรถนะ',
+  title:'แผนภาพที่ 2 · วงจรแบบทดสอบวัดสมรรถนะ ตั้งแต่เปิดสอบจนถึงปรับปรุงคลังข้อสอบ',
+  sub:'ผู้ดูแลระบบเปิดสอบรายสมรรถนะ ระบบสุ่มข้อสอบ ตรวจเฉลย และวิเคราะห์คุณภาพข้อสอบด้วยทฤษฎีการทดสอบ ผู้ดูแลใช้ผลนั้นปรับปรุงคลังข้อสอบในรอบถัดไป',
+  cap:'<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> การตรวจข้อสอบและการวิเคราะห์คุณภาพรายข้อเกิดขึ้นเองทุกครั้งที่มีผู้สอบ ผู้ดูแลระบบจึงใช้เวลาไปกับการทบทวนข้อที่มีปัญหาแทนการคำนวณค่าสถิติ',
+  nodes:[
+    {id:'b1', lane:'admin', col:0, kind:'start', t:['เปิดสอบรายสมรรถนะ','กำหนดจำนวนข้อและเวลา']},
+    {id:'b2', lane:'sys',   col:1, kind:'auto',  t:['สุ่มข้อสอบจากคลัง','ตามสมรรถนะที่เปิดสอบ']},
+    {id:'b3', lane:'stu',   col:2, kind:'task',  t:['ทำแบบทดสอบทีละข้อ','ภายในเวลาที่กำหนด']},
+    {id:'b4', lane:'sys',   col:3, kind:'auto',  t:['บันทึกคำตอบรายข้อ','ทุกครั้งที่เลือก']},
+    {id:'b5', lane:'stu',   col:4, kind:'task',  t:['ส่งคำตอบ']},
+    {id:'b6', lane:'sys',   col:5, kind:'auto',  t:['ตรวจเฉลย คำนวณคะแนน','บันทึกผลการสอบ']},
+    {id:'b7', lane:'stu',   col:6, kind:'end',   t:['ดูผลสอบ','รายสมรรถนะ']},
+    {id:'b8', lane:'sys',   col:6, kind:'auto',  t:['วิเคราะห์คุณภาพข้อสอบ','ความยาก อำนาจจำแนก','และความลำเอียงรายข้อ']},
+    {id:'b9', lane:'admin', col:7, kind:'task',  t:['ทบทวนข้อที่มีปัญหา','ปรับปรุงคลังข้อสอบ']},
+  ],
+  edges:[
+    ['b1','b2'], ['b2','b3'], ['b3','b4'], ['b4','b5'], ['b5','b6'],
+    ['b6','b7'], ['b6','b8'], ['b8','b9'],
+    ['b9','b1','เปิดสอบรอบถัดไปด้วยข้อสอบที่ปรับแล้ว',true],
+  ],
+  steps:[
+    ['ผู้ดูแลระบบ','เปิดสอบรายสมรรถนะของแต่ละชั้นปี กำหนดจำนวนข้อและเวลาทำ'],
+    ['ระบบ','สุ่มข้อสอบจากคลังตามสมรรถนะที่เปิดสอบ ผู้สอบแต่ละคนจึงได้ชุดข้อสอบที่ไม่ซ้ำกัน'],
+    ['นักศึกษา','ทำแบบทดสอบทีละข้อ มีแถบความก้าวหน้าและข้ามกลับมาตอบใหม่ได้'],
+    ['ระบบ','บันทึกคำตอบรายข้อทันทีที่เลือก การสอบจึงไม่สูญหายเมื่อสัญญาณขาด'],
+    ['นักศึกษา','ส่งคำตอบเมื่อทำครบหรือหมดเวลา'],
+    ['ระบบ','ตรวจเฉลย คำนวณคะแนน และบันทึกผลการสอบลงฐานข้อมูล'],
+    ['นักศึกษา','ดูผลสอบรายสมรรถนะของตนเองได้ทันที'],
+    ['ระบบ','วิเคราะห์คุณภาพข้อสอบจากการตอบจริง ทั้งค่าความยาก อำนาจจำแนก ความเที่ยง และความลำเอียงรายข้อระหว่างกลุ่มผู้สอบ'],
+    ['ผู้ดูแลระบบ','ทบทวนข้อที่มีปัญหา แก้ไขหรือถอดออกจากคลัง แล้วเปิดสอบรอบถัดไป'],
+  ],
+},
+{
+  id:'ai', tab:'วงจรวิเคราะห์ด้วย AI',
+  title:'แผนภาพที่ 3 · วงจรการวิเคราะห์ด้วยปัญญาประดิษฐ์ และการอธิบายผล',
+  sub:'เปิดหน้าวิเคราะห์แล้วระบบดึงข้อมูลจริง ฝึกแบบจำลองให้เอง ตรวจสอบความแม่นยำแบบไขว้ อธิบายผล และตรวจความเป็นธรรมระหว่างกลุ่มผู้เรียน',
+  cap:'<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> ผู้ดูแลระบบไม่ต้องสั่งฝึกแบบจำลองเอง และเมื่อข้อมูลจริงยังไม่พอ ระบบจะบอกว่าขาดข้อมูลใดแทนการแสดงผลจากข้อมูลจำลอง ผลที่เห็นจึงอ้างอิงข้อมูลจริงเสมอ',
+  nodes:[
+    {id:'c1', lane:'admin', col:0, kind:'start', t:['เปิดเมนูวิเคราะห์','EDM · XAI · ความสอดคล้อง']},
+    {id:'c2', lane:'sys',   col:1, kind:'auto',  t:['ดึงข้อมูลจริงจากฐานข้อมูล','ผลประเมิน ผลสอบ','และแฟ้มสะสมงาน']},
+    {id:'c3', lane:'sys',   col:2, kind:'dec',   t:['ข้อมูลจริงพอ','สำหรับฝึกหรือไม่']},
+    {id:'c4', lane:'admin', col:3, kind:'task',  t:['เก็บข้อมูลเพิ่ม','ตามที่ระบบแจ้งว่าขาด']},
+    {id:'c5', lane:'sys',   col:3, kind:'auto',  t:['ฝึกแบบจำลองอัตโนมัติ','ทั้งกลุ่มเรียนรู้ของเครื่อง','และโครงข่ายเชิงลึก']},
+    {id:'c6', lane:'sys',   col:4, kind:'auto',  t:['ตรวจสอบไขว้แบบ','ทิ้งทีละหนึ่ง และรายงาน','ค่าความแม่นยำทุกโมเดล']},
+    {id:'c7', lane:'sys',   col:5, kind:'auto',  t:['อธิบายผลรายบุคคล','ด้วยค่า Shapley และ','ตรวจความเป็นธรรม']},
+    {id:'c8', lane:'admin', col:6, kind:'end',   t:['อ่านผล วางนโยบาย','และแผนช่วยเหลือผู้เรียน']},
+    {id:'c9', lane:'rater', col:6, kind:'end',   t:['ดูความสอดคล้องของตน','เทียบผู้ประเมินฝ่ายอื่น']},
+  ],
+  edges:[
+    ['c1','c2'], ['c2','c3'], ['c3','c5','ข้อมูลพอแล้ว'], ['c3','c4','ยังไม่พอ'],
+    ['c4','c2','เมื่อมีข้อมูลเพิ่มแล้ววิเคราะห์ใหม่',true],
+    ['c5','c6'], ['c6','c7'], ['c7','c8'], ['c7','c9'],
+  ],
+  steps:[
+    ['ผู้ดูแลระบบ','เปิดเมนู Educational Data Mining, XAI & Fairness หรือความสอดคล้องผู้ประเมิน'],
+    ['ระบบ','ดึงผลการประเมิน ผลการสอบ และสรุปแฟ้มสะสมงานของผู้เรียนทุกคนในขอบเขตจากฐานข้อมูลจริง'],
+    ['ระบบ','ตรวจว่าข้อมูลจริงพอสำหรับฝึกหรือไม่ เช่น ผู้เรียนต้องได้รับการประเมินอย่างน้อยสองรอบ'],
+    ['ผู้ดูแลระบบ','เมื่อข้อมูลยังไม่พอ ระบบระบุว่าขาดอะไร ผู้ดูแลจึงเก็บข้อมูลเพิ่มแล้วให้วิเคราะห์ใหม่'],
+    ['ระบบ','ฝึกแบบจำลองให้อัตโนมัติเมื่อข้อมูลครบ ทั้งกลุ่มเรียนรู้ของเครื่องและโครงข่ายเชิงลึกที่ใช้ลำดับการตอบข้อสอบจริง'],
+    ['ระบบ','ตรวจสอบความแม่นยำแบบไขว้ทิ้งทีละหนึ่ง แล้วรายงานค่าความแม่นยำของทุกโมเดลเทียบกัน'],
+    ['ระบบ','อธิบายว่าแบบจำลองใช้ข้อมูลใดตัดสินเป็นรายบุคคล และตรวจความเป็นธรรมระหว่างชั้นปีและสาขาวิชา'],
+    ['ผู้ดูแลระบบ','อ่านผลเพื่อวางนโยบายและแผนช่วยเหลือผู้เรียนกลุ่มเสี่ยง'],
+    ['ผู้ประเมิน','ดูความสอดคล้องของคะแนนตนเองเทียบกับผู้ประเมินฝ่ายอื่นในนักศึกษาคนเดียวกัน'],
+  ],
+},
+{
+  id:'cert', tab:'วงจรใบรับรองสมรรถนะ',
+  title:'แผนภาพที่ 4 · วงจรการออกใบรับรองสมรรถนะ',
+  sub:'ระบบตรวจเงื่อนไขจากผลการประเมินจริง ผู้ดูแลระบบเป็นผู้อนุมัติและออกเลขที่ ผู้เรียนดาวน์โหลดใบรับรองได้เมื่อผ่านครบทุกสมรรถนะของชั้นปี',
+  cap:'<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> เงื่อนไขการได้รับใบรับรองถูกตรวจจากฐานข้อมูลเสมอ หน้าเว็บจึงปลอมสถานะไม่ได้ และการยกเลิกยังคงระเบียนไว้ให้ตรวจสอบย้อนหลัง',
+  nodes:[
+    {id:'d1', lane:'stu',   col:0, kind:'start', t:['เปิดเมนูใบรับรอง','ในโปรไฟล์ของฉัน']},
+    {id:'d2', lane:'sys',   col:1, kind:'auto',  t:['ตรวจเงื่อนไขจากฐานข้อมูล','ประเมินครบทุกสมรรถนะ','และถึงระดับเป้าหมาย']},
+    {id:'d3', lane:'sys',   col:2, kind:'dec',   t:['ครบเงื่อนไข','หรือไม่']},
+    {id:'d4', lane:'stu',   col:3, kind:'task',  t:['เห็นรายการสมรรถนะ','ที่ยังขาด']},
+    {id:'d5', lane:'admin', col:3, kind:'task',  t:['ตรวจรายชื่อผู้มีสิทธิ์','และกดออกใบรับรอง']},
+    {id:'d6', lane:'sys',   col:4, kind:'auto',  t:['ออกเลขที่ใบรับรอง','บันทึกผู้ออกและวันที่']},
+    {id:'d7', lane:'stu',   col:5, kind:'end',   t:['ดาวน์โหลดและพิมพ์','ใบรับรองสมรรถนะ']},
+    {id:'d8', lane:'admin', col:5, kind:'task',  t:['ยกเลิกใบรับรองได้','โดยระเบียนยังอยู่']},
+  ],
+  edges:[
+    ['d1','d2'], ['d2','d3'], ['d3','d5','ครบแล้ว'], ['d3','d4','ยังไม่ครบ'],
+    ['d4','d1','ประเมินเพิ่มแล้วตรวจใหม่',true],
+    ['d5','d6'], ['d6','d7'], ['d6','d8'],
+  ],
+  steps:[
+    ['นักศึกษา','เปิดเมนูใบรับรองสมรรถนะในโปรไฟล์ของตนเอง'],
+    ['ระบบ','ตรวจจากผลการประเมินจริงว่าครบทุกสมรรถนะของชั้นปีและถึงระดับเป้าหมายหรือยัง'],
+    ['ระบบ','สรุปผลการตรวจเงื่อนไขเป็นสถานะว่าผ่านหรือยังไม่ผ่าน'],
+    ['นักศึกษา','เมื่อยังไม่ครบ จะเห็นรายการสมรรถนะที่ยังขาดและคะแนนที่ต้องพัฒนา'],
+    ['ผู้ดูแลระบบ','ตรวจรายชื่อผู้มีสิทธิ์แล้วกดออกใบรับรอง ทีละคนหรือหลายคนพร้อมกัน'],
+    ['ระบบ','ออกเลขที่ใบรับรอง บันทึกผู้ออก วันที่ และระดับผลลงฐานข้อมูล'],
+    ['นักศึกษา','ดาวน์โหลดหรือพิมพ์ใบรับรองของตนเองได้ทันทีที่ออกเลขที่แล้ว'],
+    ['ผู้ดูแลระบบ','ยกเลิกใบรับรองได้เมื่อพบข้อผิดพลาด โดยระเบียนเดิมยังอยู่ให้ตรวจสอบย้อนหลัง'],
+  ],
+},
+];
+
+/* ---------- ตัววาดแผนภาพ ---------- */
+const LW = 128, COL = 198, BW = 162, BH = 76, LH = 128, TOP = 34, RET = 46, PADR = 26;
+const DW = 150, DH = 82;                       // ขนาดสี่เหลี่ยมข้าวหลามตัดของจุดตัดสินใจ
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function draw(flow){
+  const lanes = LANES.map((l,i)=>i).filter(i => flow.nodes.some(n => L[n.lane] === i));
+  const rowOf = {};
+  lanes.forEach((laneIdx,row) => rowOf[laneIdx] = row);
+  const cols = Math.max(...flow.nodes.map(n => n.col)) + 1;
+  const W = LW + cols*COL + PADR, H = TOP + lanes.length*LH + RET;
+
+  const pos = {};
+  flow.nodes.forEach(n => {
+    const row = rowOf[L[n.lane]];
+    const cx = LW + n.col*COL + COL/2, cy = TOP + row*LH + LH/2;
+    const w = n.kind === 'dec' ? DW : BW, h = n.kind === 'dec' ? DH : BH;
+    pos[n.id] = {cx, cy, w, h, left:cx-w/2, right:cx+w/2, top:cy-h/2, bottom:cy+h/2, n};
+  });
+
+  let s = '';
+  /* แถบของแต่ละผู้เกี่ยวข้อง */
+  lanes.forEach((laneIdx,row) => {
+    const y = TOP + row*LH;
+    s += `<rect x="0" y="${y}" width="${W}" height="${LH}" fill="${LANES[laneIdx].tint}"/>`;
+    s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;
+    LANES[laneIdx].label.forEach((line,k) => {
+      const ly = y + LH/2 - (LANES[laneIdx].label.length-1)*9 + k*18 + 5;
+      s += `<text x="${LW-16}" y="${ly}" text-anchor="end" font-size="12.5" font-weight="600"
+             fill="var(--muted)">${esc(line)}</text>`;
+    });
+  });
+  const lastY = TOP + lanes.length*LH;
+  s += `<line x1="0" y1="${lastY}" x2="${W}" y2="${lastY}" stroke="var(--line)" stroke-width="1"/>`;
+  s += `<line x1="${LW}" y1="${TOP}" x2="${LW}" y2="${lastY}" stroke="var(--line)" stroke-width="1"/>`;
+
+  /* ลูกศรบอกทิศของเวลา */
+  s += `<line x1="${LW}" y1="${TOP-16}" x2="${W-PADR/2}" y2="${TOP-16}" stroke="var(--line)"
+          stroke-width="1" marker-end="url(#tip-soft)"/>`;
+  s += `<text x="${LW-16}" y="${TOP-12}" text-anchor="end" font-size="11" fill="var(--muted)">ลำดับเวลา</text>`;
+
+  /* เส้นเชื่อม วาดก่อนกล่องเพื่อให้ปลายเส้นอยู่ใต้กรอบ */
+  const retY = lastY + RET/2;
+  flow.edges.forEach(([from,to,label,back]) => {
+    const a = pos[from], b = pos[to];
+    if (!a || !b) return;
+    let d = '', lx = 0, ly = 0;
+    if (back){
+      d = `M ${a.cx} ${a.bottom} V ${retY} H ${b.cx} V ${b.bottom}`;
+      lx = (a.cx + b.cx)/2; ly = retY - 7;
+    } else if (a.n.col === b.n.col){
+      const down = b.cy > a.cy;
+      d = `M ${a.cx} ${down ? a.bottom : a.top} V ${down ? b.top : b.bottom}`;
+      lx = a.cx + 8; ly = (a.cy + b.cy)/2;
+    } else if (Math.abs(a.cy - b.cy) < 1){
+      d = `M ${a.right} ${a.cy} H ${b.left}`;
+      lx = (a.right + b.left)/2; ly = a.cy - 9;
+    } else {
+      const mid = (a.right + b.left)/2;
+      d = `M ${a.right} ${a.cy} H ${mid} V ${b.cy} H ${b.left}`;
+      lx = mid + 6; ly = (a.cy + b.cy)/2 - 7;
+    }
+    s += `<path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1.6"
+            stroke-dasharray="${back ? '6 5' : '0'}" marker-end="url(#tip)"/>`;
+    if (label){
+      s += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="11" fill="var(--muted)"
+              paint-order="stroke" stroke="var(--surface)" stroke-width="4"
+              stroke-linejoin="round">${esc(label)}</text>`;
+    }
+  });
+
+  /* กล่องงาน */
+  flow.nodes.forEach(n => {
+    const p = pos[n.id];
+    const lines = n.t;
+    const ty = p.cy - (lines.length-1)*8.5;
+    if (n.kind === 'dec'){
+      s += `<polygon points="${p.cx},${p.top} ${p.right},${p.cy} ${p.cx},${p.bottom} ${p.left},${p.cy}"
+              fill="var(--dec-bg)" stroke="var(--dec)" stroke-width="1.6"/>`;
+    } else if (n.kind === 'start' || n.kind === 'end'){
+      s += `<rect x="${p.left}" y="${p.top}" width="${p.w}" height="${p.h}" rx="${p.h/2}"
+              fill="var(--flow)" stroke="var(--flow)" stroke-width="1.6"/>`;
+    } else if (n.kind === 'auto'){
+      s += `<rect x="${p.left}" y="${p.top}" width="${p.w}" height="${p.h}" rx="9"
+              fill="var(--auto-bg)" stroke="var(--auto)" stroke-width="1.6" stroke-dasharray="7 5"/>`;
+      s += `<rect x="${p.right-56}" y="${p.top-10}" width="56" height="19" rx="9.5"
+              fill="var(--auto)"/>`;
+      s += `<text x="${p.right-28}" y="${p.top+3.5}" text-anchor="middle" font-size="10.5"
+              font-weight="600" fill="#2A1F08">อัตโนมัติ</text>`;
+    } else {
+      s += `<rect x="${p.left}" y="${p.top}" width="${p.w}" height="${p.h}" rx="9"
+              fill="var(--task-bg)" stroke="var(--task)" stroke-width="1.6"/>`;
+    }
+    const fill = (n.kind === 'start' || n.kind === 'end') ? 'var(--flow-ink)'
+               : n.kind === 'auto' ? 'var(--auto-ink)' : 'var(--ink)';
+    s += `<text x="${p.cx}" y="${ty}" text-anchor="middle" font-size="12.5" fill="${fill}"
+            font-weight="${n.kind === 'start' || n.kind === 'end' ? 600 : 500}">`;
+    lines.forEach((line,i) => {
+      s += `<tspan x="${p.cx}" dy="${i ? 17 : 4}">${esc(line)}</tspan>`;
+    });
+    s += `</text>`;
+  });
+
+  const defs = `<defs>
+      <marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+        orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)"/></marker>
+      <marker id="tip-soft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+        orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--line)"/></marker>
+    </defs>`;
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
+    aria-label="${esc(flow.title)} · ${esc(flow.sub)}" font-family="var(--ff-body)">${defs}${s}</svg>`;
+}
+
+/* ---------- การแสดงผลและการสลับวงจร ---------- */
+const tabsEl = document.getElementById('tabs');
+const scrollEl = document.getElementById('figScroll');
+const fitBtn = document.getElementById('fitBtn');
+
+const LEGEND = `<div class="legend">
+  <span><i class="key"></i>งานที่ผู้ใช้ทำเอง</span>
+  <span><i class="key auto"></i>ระบบทำให้อัตโนมัติ</span>
+  <span><i class="key dec"></i>จุดตัดสินใจของระบบ</span>
+  <span><i class="key flow"></i>เริ่มต้น / สิ้นสุดวงจร</span></div>`;
+
+const stepsHTML = f => f.steps.map(([who,text]) =>
+  `<li><span class="who${who === 'ระบบ' ? ' sys' : ''}">${esc(who)}</span><span>${esc(text)}</span></li>`).join('');
+
+function show(i){
+  const f = FLOWS[i];
+  document.getElementById('figTitle').textContent = f.title;
+  document.getElementById('figSub').textContent = f.sub;
+  document.getElementById('figCap').innerHTML = f.cap;
+  scrollEl.innerHTML = draw(f);
+  document.getElementById('steps').innerHTML = stepsHTML(f);
+  [...tabsEl.children].forEach((b,k) => b.setAttribute('aria-selected', k === i ? 'true' : 'false'));
+  try { localStorage.setItem('ptru_swim_tab', String(i)); } catch (e) {}
+}
+
+/* สำเนาสำหรับสั่งพิมพ์ ได้ครบทุกวงจรในครั้งเดียว */
+document.getElementById('printAll').innerHTML = FLOWS.map(f => `<figure>
+    <div class="fig-head"><h2>${esc(f.title)}</h2><p>${esc(f.sub)}</p></div>
+    <div class="scroll">${draw(f)}</div>
+    ${LEGEND}
+    <figcaption>${f.cap}</figcaption>
+    <ol class="steps">${stepsHTML(f)}</ol>
+  </figure>`).join('');
+
+function setFit(on){
+  scrollEl.classList.toggle('fitw', on);
+  fitBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  fitBtn.textContent = on ? 'ดูขนาดเต็ม' : 'ย่อให้เห็นทั้งแผนภาพ';
+  try { localStorage.setItem('ptru_swim_fit', on ? '1' : '0'); } catch (e) {}
+}
+fitBtn.addEventListener('click', () => setFit(!scrollEl.classList.contains('fitw')));
+
+FLOWS.forEach((f,i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('role','tab');
+  b.innerHTML = `<span class="no">${i+1}</span>${esc(f.tab)}`;
+  b.addEventListener('click', () => show(i));
+  tabsEl.appendChild(b);
+});
+
+let start = 0;
+try {
+  const saved = Number(localStorage.getItem('ptru_swim_tab'));
+  if (saved >= 0 && saved < FLOWS.length) start = saved;
+} catch (e) {}
+const hash = (location.hash || '').replace('#','');
+const byHash = FLOWS.findIndex(f => f.id === hash);
+show(byHash >= 0 ? byHash : start);
+
+let fit = false;
+try { fit = localStorage.getItem('ptru_swim_fit') === '1'; } catch (e) {}
+setFit(fit);
+</script>
