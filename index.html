@@ -9085,7 +9085,7 @@ function ensureAppStyles(){
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     #rsmodal{position:fixed;inset:0;z-index:290;display:flex;align-items:center;justify-content:center;
       padding:1.1rem;background:rgba(8,14,30,.55);backdrop-filter:blur(3px);animation:ptru-fade .18s ease}
-    #rsmodal .card{width:min(56rem,100%);max-height:90vh;display:flex;flex-direction:column;
+    #rsmodal .card{width:min(64rem,100%);max-height:90vh;display:flex;flex-direction:column;
       background:var(--surface);border-radius:18px;overflow:hidden;
       box-shadow:0 24px 64px rgba(0,0,0,.34);animation:ptru-pop .22s ease}
     #rsmodal .hd{flex:none;display:flex;align-items:flex-start;gap:.75rem;padding:.95rem 1.1rem;color:#fff;
@@ -9128,6 +9128,66 @@ function ensureAppStyles(){
     #rsmodal pre{margin:.5rem 0 0;padding:.8rem;overflow-x:auto;border-radius:10px;font-size:.74rem;
       line-height:1.42;background:var(--surface-2);border:1px solid var(--line-soft);color:var(--text-soft);
       font-family:ui-monospace,'Cascadia Mono','Consolas',monospace}
+    /* แผนภาพ Swim-lane ใครทำอะไรในขั้นตอนไหน
+       แต่ละแถวคือผู้เกี่ยวข้องหนึ่งฝ่าย อ่านจากซ้ายไปขวาตามลำดับเวลา
+       กล่องเส้นประสีทองคือสิ่งที่ระบบทำให้อัตโนมัติ */
+    #rsmodal .swtabs{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+    #rsmodal .swtabs button{display:flex;align-items:center;gap:.4rem;padding:.33rem .7rem;border-radius:999px;
+      font-size:.77rem;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+    #rsmodal .swtabs button:hover{color:var(--text);border-color:var(--ai-blue)}
+    #rsmodal .swtabs button[aria-pressed="true"]{background:rgba(47,107,255,.1);border-color:var(--ai-blue);
+      color:var(--ai-blue);font-weight:600}
+    #rsmodal .swtabs .no{width:1.15rem;height:1.15rem;flex:none;border-radius:50%;display:flex;
+      align-items:center;justify-content:center;font-size:.67rem;font-weight:700;
+      background:var(--line-soft);color:var(--muted)}
+    #rsmodal .swtabs button[aria-pressed="true"] .no{background:var(--ai-blue);color:#fff}
+    #rsmodal .swtabs .swfit{margin-left:auto}
+    #rsmodal .swhd{margin-top:.6rem;font-size:.84rem;font-weight:600;line-height:1.5}
+    #rsmodal .swsub{margin-top:.1rem;font-size:.78rem;color:var(--text-soft);line-height:1.6}
+    #rsmodal .swwrap{overflow-x:auto;margin-top:.5rem;padding:.35rem .4rem;
+      border:1px solid var(--line-soft);border-radius:12px;background:var(--surface)}
+    #rsmodal .swwrap.fit{overflow-x:hidden}
+    #rsmodal .swd{display:block;max-width:none}
+    #rsmodal .swwrap.fit .swd{width:100%;height:auto}
+    #rsmodal .swd rect.ln{stroke:none}
+    #rsmodal .swd rect.l1{fill:rgba(47,107,255,.055)}
+    #rsmodal .swd rect.l2{fill:rgba(139,92,246,.065)}
+    #rsmodal .swd rect.l3{fill:rgba(18,184,134,.07)}
+    #rsmodal .swd rect.l4{fill:rgba(154,91,24,.085)}
+    #rsmodal .swd line.gd{stroke:var(--line);stroke-width:1}
+    #rsmodal .swd path.cn{fill:none;stroke:var(--muted);stroke-width:1.5;opacity:.85}
+    #rsmodal .swd path.cn.back{stroke-dasharray:6 5}
+    #rsmodal .swd rect.task{fill:var(--surface);stroke:var(--ai-blue);stroke-width:1.5}
+    #rsmodal .swd rect.auto{fill:var(--surface);stroke:var(--warn);stroke-width:1.5;stroke-dasharray:7 5}
+    #rsmodal .swd rect.chip{fill:var(--warn);stroke:none}
+    #rsmodal .swd rect.flow{fill:var(--ok);stroke:none}
+    #rsmodal .swd polygon.dec{fill:var(--surface);stroke:var(--c5);stroke-width:1.5}
+    #rsmodal .swd text{font-size:12px;font-weight:500;fill:var(--text);
+      text-anchor:middle;dominant-baseline:central}
+    #rsmodal .swd text.who{font-size:11.5px;font-weight:600;fill:var(--muted);text-anchor:end}
+    #rsmodal .swd text.tm{font-size:10.5px;font-weight:400;fill:var(--muted);text-anchor:end}
+    #rsmodal .swd text.tf{fill:#fff;font-weight:600}
+    #rsmodal .swd text.ta{fill:var(--warn)}
+    #rsmodal .swd text.tc{font-size:10px;font-weight:700;fill:#fff}
+    #rsmodal .swd text.el{font-size:10.5px;fill:var(--muted);paint-order:stroke;stroke:var(--surface);
+      stroke-width:3.5px;stroke-linejoin:round}
+    #rsmodal .swd marker path{fill:var(--muted);stroke:none}
+    #rsmodal .swleg{display:flex;flex-wrap:wrap;gap:.25rem .9rem;justify-content:center;
+      margin-top:.45rem;font-size:.73rem;color:var(--muted)}
+    #rsmodal .swleg span{display:flex;align-items:center;gap:.35rem}
+    #rsmodal .swleg i{width:1.5rem;height:.8rem;flex:none;border-radius:3px;
+      border:1.5px solid var(--ai-blue);background:var(--surface)}
+    #rsmodal .swleg i.auto{border-style:dashed;border-color:var(--warn)}
+    #rsmodal .swleg i.dec{width:.85rem;height:.85rem;border-color:var(--c5);transform:rotate(45deg)}
+    #rsmodal .swleg i.flow{border-radius:999px;background:var(--ok);border-color:var(--ok)}
+    #rsmodal .swcap{margin-top:.5rem;font-size:.79rem;color:var(--text-soft);line-height:1.65}
+    #rsmodal .swsteps{margin:.5rem 0 0;padding:0;list-style:none;display:grid;gap:.35rem}
+    #rsmodal .swsteps li{display:flex;gap:.45rem;align-items:flex-start;font-size:.79rem;line-height:1.6}
+    #rsmodal .swsteps .wh{flex:none;margin-top:.12rem;padding:.04rem .45rem;border-radius:999px;
+      font-size:.68rem;font-weight:600;white-space:nowrap;
+      border:1px solid var(--line);background:var(--surface-2);color:var(--muted)}
+    #rsmodal .swsteps .wh.sys{border-style:dashed;border-color:var(--warn);
+      background:var(--warn-bg);color:var(--warn)}
     #rsmodal .people{display:grid;gap:.85rem;grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))}
     #rsmodal .person{display:flex;gap:.85rem;padding:.85rem;border:1px solid var(--line);
       border-radius:14px;background:var(--surface-2)}
@@ -9149,6 +9209,8 @@ function ensureAppStyles(){
       #rsmodal .bd{padding:.9rem}
       #rsmodal .person{flex-direction:column;align-items:center;text-align:center}
       #rsmodal .person img{width:7.4rem;height:9.3rem}
+      #rsmodal .swtabs button{font-size:.72rem;padding:.28rem .55rem}
+      #rsmodal .swtabs .swfit{margin-left:0}
     }
   `;
   document.head.appendChild(st);
@@ -12667,6 +12729,260 @@ function rsDiagram(){
   </svg>`;
 }
 
+/* ---------- แผนภาพ Swim-lane ใครทำอะไรในขั้นตอนไหน ----------
+   แถวหนึ่งคือผู้เกี่ยวข้องหนึ่งฝ่าย อ่านจากซ้ายไปขวาตามลำดับเวลา
+   แถวใดไม่เกี่ยวข้องกับวงจรนั้นจะไม่ถูกวาด เพื่อไม่ให้เหลือแถวว่าง */
+const SW_LANE=[
+  {t:["ผู้ดูแลระบบ /","ประธานหลักสูตร"],c:"l1"},
+  {t:["อาจารย์นิเทศก์ /","ครูพี่เลี้ยง"],c:"l2"},
+  {t:["นักศึกษาครู"],c:"l3"},
+  {t:["ระบบ PTRU-DCAI"],c:"l4"}
+];
+const SW_AT={admin:0,rater:1,stu:2,sys:3};
+/* kind: start/end แคปซูลเขียว, task กล่องเส้นทึบ, auto กล่องเส้นประสีทอง, dec สี่เหลี่ยมข้าวหลามตัด
+   edge: [จาก, ถึง, ป้ายกำกับ, เป็นเส้นย้อนกลับ] */
+const SW_FLOWS=[
+{
+  id:"assess", tab:"วงจรการประเมินสมรรถนะ",
+  title:"แผนภาพที่ 1 · วงจรการประเมินสมรรถนะ ตั้งแต่ตั้งค่ากรอบจนถึงรายงานผล",
+  sub:"ผู้ดูแลระบบกำหนดกรอบสมรรถนะรายชั้นปี ผู้ประเมินสามฝ่ายให้คะแนนรายตัวชี้วัดในครั้งที่กำหนด "+
+      "ระบบรวมคะแนนตามกติกาสามฝ่ายและส่งผลกลับถึงผู้เรียน",
+  cap:"<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> ผู้ประเมินทำเพียงสามขั้นคือตั้งค่า ให้คะแนน และกดบันทึก "+
+      "ส่วนการเก็บแบบร่าง การผูกคะแนนกับผู้ประเมินและครั้งที่ประเมิน และการรวมคะแนนสามฝ่าย เป็นงานที่ระบบทำให้ทั้งหมด",
+  nodes:[
+    {id:"a1",lane:"admin",col:0,kind:"start",t:["ตั้งค่ากรอบสมรรถนะ","รายชั้นปีที่ 1–4"]},
+    {id:"a2",lane:"sys",col:1,kind:"auto",t:["บันทึกสมรรถนะที่เปิดใช้","ตัวชี้วัด และเป้าหมาย","มีผลกับผู้ประเมินทันที"]},
+    {id:"a3",lane:"rater",col:2,kind:"task",t:["ขั้นที่ 1 เลือกชั้นปี","ครั้งที่ประเมิน นักศึกษา","และสมรรถนะ"]},
+    {id:"a4",lane:"rater",col:3,kind:"task",t:["ขั้นที่ 2 ให้คะแนน","ทีละตัวชี้วัด 5 ระดับ"]},
+    {id:"a5",lane:"sys",col:3,kind:"auto",t:["บันทึกแบบร่างทุกครั้ง","ที่กดคะแนน"]},
+    {id:"a6",lane:"rater",col:4,kind:"task",t:["ขั้นที่ 3 บันทึก","ผลการประเมิน"]},
+    {id:"a7",lane:"sys",col:4,kind:"auto",t:["เก็บคะแนนรายตัวชี้วัด","พร้อมรหัสผู้ประเมิน","และครั้งที่ประเมิน"]},
+    {id:"a8",lane:"stu",col:2,kind:"task",t:["ประเมินตนเองด้วย","แบบประเมินชุดเดียวกัน"]},
+    {id:"a9",lane:"sys",col:5,kind:"dec",t:["ประเมินครบทุก","สมรรถนะหรือยัง"]},
+    {id:"a10",lane:"sys",col:6,kind:"auto",t:["รวมคะแนนสามฝ่าย","นิเทศก์ พี่เลี้ยง ตนเอง","แล้วเทียบระดับเป้าหมาย"]},
+    {id:"a11",lane:"stu",col:7,kind:"end",t:["ดูผลและแผน","พัฒนารายบุคคล"]},
+    {id:"a12",lane:"admin",col:7,kind:"end",t:["ดูรายงานภาพรวม","และความสอดคล้อง","ของผู้ประเมิน"]}
+  ],
+  edges:[["a1","a2"],["a2","a3"],["a2","a8"],["a3","a4"],["a4","a5"],["a5","a6"],
+    ["a6","a7"],["a8","a7"],["a7","a9"],
+    ["a9","a3","ยังไม่ครบ · ประเมินสมรรถนะถัดไป",true],
+    ["a9","a10","ครบแล้ว"],["a10","a11"],["a10","a12"]],
+  steps:[
+    ["ผู้ดูแลระบบ","เปิดใช้สมรรถนะของแต่ละชั้นปี กำหนดตัวชี้วัดและระดับเป้าหมาย"],
+    ["ระบบ","บันทึกค่าที่ตั้งลงฐานข้อมูลทันที แบบประเมินของผู้ประเมินทุกคนเปลี่ยนตามโดยไม่ต้องแจ้งเวียน"],
+    ["ผู้ประเมิน","ขั้นที่ 1 เลือกชั้นปี ครั้งที่ประเมิน (ครั้งที่ 1–3) นักศึกษา และสมรรถนะที่จะประเมิน"],
+    ["ผู้ประเมิน","ขั้นที่ 2 ให้คะแนนทีละตัวชี้วัดตามเกณฑ์ 5 ระดับ พร้อมคำอธิบายระดับของตัวชี้วัดนั้น"],
+    ["ระบบ","บันทึกแบบร่างลงเครื่องทุกครั้งที่กดคะแนน ปิดหน้าไปแล้วกลับมาทำต่อได้โดยคะแนนไม่หาย"],
+    ["ผู้ประเมิน","ขั้นที่ 3 กดบันทึกผลการประเมิน พร้อมข้อเสนอแนะเพื่อการพัฒนา"],
+    ["ระบบ","บันทึกคะแนนรายตัวชี้วัด ผูกกับรหัสผู้ประเมิน ครั้งที่ประเมิน และช่องทางตามบทบาท"],
+    ["นักศึกษา","ประเมินตนเองด้วยแบบประเมินชุดเดียวกัน คะแนนเข้าช่องทางประเมินตนเอง"],
+    ["ระบบ","ตรวจว่าประเมินครบทุกสมรรถนะของครั้งนั้นหรือยัง ถ้ายังไม่ครบจะเสนอสมรรถนะถัดไปให้ทันที"],
+    ["ระบบ","รวมคะแนนตามกติกา (อาจารย์นิเทศก์ + ครูพี่เลี้ยง + ประเมินตนเอง) ÷ 3 แล้วเทียบระดับเป้าหมายของชั้นปี"],
+    ["นักศึกษา","ดูผลรายสมรรถนะ พัฒนาการรายรอบ และแผนพัฒนารายบุคคล"],
+    ["ผู้ดูแลระบบ","ดูรายงานภาพรวมของคณะ และตรวจความสอดคล้องระหว่างผู้ประเมิน"]
+  ]
+},
+{
+  id:"exam", tab:"วงจรแบบทดสอบ",
+  title:"แผนภาพที่ 2 · วงจรแบบทดสอบวัดสมรรถนะ ตั้งแต่เปิดสอบจนถึงปรับปรุงคลังข้อสอบ",
+  sub:"ผู้ดูแลระบบเปิดสอบรายสมรรถนะ ระบบสุ่มข้อสอบ ตรวจเฉลย และวิเคราะห์คุณภาพข้อสอบ "+
+      "ผู้ดูแลใช้ผลนั้นปรับปรุงคลังข้อสอบในรอบถัดไป",
+  cap:"<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> การตรวจข้อสอบและการวิเคราะห์คุณภาพรายข้อเกิดขึ้นเองทุกครั้งที่มีผู้สอบ "+
+      "ผู้ดูแลระบบจึงใช้เวลาไปกับการทบทวนข้อที่มีปัญหาแทนการคำนวณค่าสถิติ",
+  nodes:[
+    {id:"b1",lane:"admin",col:0,kind:"start",t:["เปิดสอบรายสมรรถนะ","กำหนดจำนวนข้อและเวลา"]},
+    {id:"b2",lane:"sys",col:1,kind:"auto",t:["สุ่มข้อสอบจากคลัง","ตามสมรรถนะที่เปิดสอบ"]},
+    {id:"b3",lane:"stu",col:2,kind:"task",t:["ทำแบบทดสอบทีละข้อ","ภายในเวลาที่กำหนด"]},
+    {id:"b4",lane:"sys",col:3,kind:"auto",t:["บันทึกคำตอบรายข้อ","ทุกครั้งที่เลือก"]},
+    {id:"b5",lane:"stu",col:4,kind:"task",t:["ส่งคำตอบ"]},
+    {id:"b6",lane:"sys",col:5,kind:"auto",t:["ตรวจเฉลย คำนวณคะแนน","บันทึกผลการสอบ"]},
+    {id:"b7",lane:"stu",col:6,kind:"end",t:["ดูผลสอบ","รายสมรรถนะ"]},
+    {id:"b8",lane:"sys",col:6,kind:"auto",t:["วิเคราะห์คุณภาพข้อสอบ","ความยาก อำนาจจำแนก","และความลำเอียงรายข้อ"]},
+    {id:"b9",lane:"admin",col:7,kind:"task",t:["ทบทวนข้อที่มีปัญหา","ปรับปรุงคลังข้อสอบ"]}
+  ],
+  edges:[["b1","b2"],["b2","b3"],["b3","b4"],["b4","b5"],["b5","b6"],
+    ["b6","b7"],["b6","b8"],["b8","b9"],
+    ["b9","b1","เปิดสอบรอบถัดไปด้วยข้อสอบที่ปรับแล้ว",true]],
+  steps:[
+    ["ผู้ดูแลระบบ","เปิดสอบรายสมรรถนะของแต่ละชั้นปี กำหนดจำนวนข้อและเวลาทำ"],
+    ["ระบบ","สุ่มข้อสอบจากคลังตามสมรรถนะที่เปิดสอบ ผู้สอบแต่ละคนจึงได้ชุดข้อสอบที่ไม่ซ้ำกัน"],
+    ["นักศึกษา","ทำแบบทดสอบทีละข้อ มีแถบความก้าวหน้าและข้ามกลับมาตอบใหม่ได้"],
+    ["ระบบ","บันทึกคำตอบรายข้อทันทีที่เลือก การสอบจึงไม่สูญหายเมื่อสัญญาณขาด"],
+    ["นักศึกษา","ส่งคำตอบเมื่อทำครบหรือหมดเวลา"],
+    ["ระบบ","ตรวจเฉลย คำนวณคะแนน และบันทึกผลการสอบลงฐานข้อมูล"],
+    ["นักศึกษา","ดูผลสอบรายสมรรถนะของตนเองได้ทันที"],
+    ["ระบบ","วิเคราะห์คุณภาพข้อสอบจากการตอบจริง ทั้งค่าความยาก อำนาจจำแนก ความเที่ยง และความลำเอียงรายข้อระหว่างกลุ่มผู้สอบ"],
+    ["ผู้ดูแลระบบ","ทบทวนข้อที่มีปัญหา แก้ไขหรือถอดออกจากคลัง แล้วเปิดสอบรอบถัดไป"]
+  ]
+},
+{
+  id:"ai", tab:"วงจรวิเคราะห์ด้วย AI",
+  title:"แผนภาพที่ 3 · วงจรการวิเคราะห์ด้วยปัญญาประดิษฐ์ และการอธิบายผล",
+  sub:"เปิดหน้าวิเคราะห์แล้วระบบดึงข้อมูลจริง ฝึกแบบจำลองให้เอง ตรวจสอบความแม่นยำแบบไขว้ "+
+      "อธิบายผล และตรวจความเป็นธรรมระหว่างกลุ่มผู้เรียน",
+  cap:"<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> ผู้ดูแลระบบไม่ต้องสั่งฝึกแบบจำลองเอง และเมื่อข้อมูลจริงยังไม่พอ "+
+      "ระบบจะบอกว่าขาดข้อมูลใดแทนการแสดงผลจากข้อมูลจำลอง ผลที่เห็นจึงอ้างอิงข้อมูลจริงเสมอ",
+  nodes:[
+    {id:"c1",lane:"admin",col:0,kind:"start",t:["เปิดเมนูวิเคราะห์","EDM · XAI · ความสอดคล้อง"]},
+    {id:"c2",lane:"sys",col:1,kind:"auto",t:["ดึงข้อมูลจริงจากฐานข้อมูล","ผลประเมิน ผลสอบ","และแฟ้มสะสมงาน"]},
+    {id:"c3",lane:"sys",col:2,kind:"dec",t:["ข้อมูลจริงพอ","สำหรับฝึกหรือไม่"]},
+    {id:"c4",lane:"admin",col:3,kind:"task",t:["เก็บข้อมูลเพิ่ม","ตามที่ระบบแจ้งว่าขาด"]},
+    {id:"c5",lane:"sys",col:3,kind:"auto",t:["ฝึกแบบจำลองอัตโนมัติ","ทั้งกลุ่มเรียนรู้ของเครื่อง","และโครงข่ายเชิงลึก"]},
+    {id:"c6",lane:"sys",col:4,kind:"auto",t:["ตรวจสอบไขว้แบบ","ทิ้งทีละหนึ่ง และรายงาน","ค่าความแม่นยำทุกโมเดล"]},
+    {id:"c7",lane:"sys",col:5,kind:"auto",t:["อธิบายผลรายบุคคล","ด้วยค่า Shapley และ","ตรวจความเป็นธรรม"]},
+    {id:"c8",lane:"admin",col:6,kind:"end",t:["อ่านผล วางนโยบาย","และแผนช่วยเหลือผู้เรียน"]},
+    {id:"c9",lane:"rater",col:6,kind:"end",t:["ดูความสอดคล้องของตน","เทียบผู้ประเมินฝ่ายอื่น"]}
+  ],
+  edges:[["c1","c2"],["c2","c3"],["c3","c5","ข้อมูลพอแล้ว"],["c3","c4","ยังไม่พอ"],
+    ["c4","c2","เมื่อมีข้อมูลเพิ่มแล้ววิเคราะห์ใหม่",true],
+    ["c5","c6"],["c6","c7"],["c7","c8"],["c7","c9"]],
+  steps:[
+    ["ผู้ดูแลระบบ","เปิดเมนู Educational Data Mining, XAI & Fairness หรือความสอดคล้องผู้ประเมิน"],
+    ["ระบบ","ดึงผลการประเมิน ผลการสอบ และสรุปแฟ้มสะสมงานของผู้เรียนทุกคนในขอบเขตจากฐานข้อมูลจริง"],
+    ["ระบบ","ตรวจว่าข้อมูลจริงพอสำหรับฝึกหรือไม่ เช่น ผู้เรียนต้องได้รับการประเมินอย่างน้อยสองรอบ"],
+    ["ผู้ดูแลระบบ","เมื่อข้อมูลยังไม่พอ ระบบระบุว่าขาดอะไร ผู้ดูแลจึงเก็บข้อมูลเพิ่มแล้วให้วิเคราะห์ใหม่"],
+    ["ระบบ","ฝึกแบบจำลองให้อัตโนมัติเมื่อข้อมูลครบ ทั้งกลุ่มเรียนรู้ของเครื่องและโครงข่ายเชิงลึกที่ใช้ลำดับการตอบข้อสอบจริง"],
+    ["ระบบ","ตรวจสอบความแม่นยำแบบไขว้ทิ้งทีละหนึ่ง แล้วรายงานค่าความแม่นยำของทุกโมเดลเทียบกัน"],
+    ["ระบบ","อธิบายว่าแบบจำลองใช้ข้อมูลใดตัดสินเป็นรายบุคคล และตรวจความเป็นธรรมระหว่างชั้นปีและสาขาวิชา"],
+    ["ผู้ดูแลระบบ","อ่านผลเพื่อวางนโยบายและแผนช่วยเหลือผู้เรียนกลุ่มเสี่ยง"],
+    ["ผู้ประเมิน","ดูความสอดคล้องของคะแนนตนเองเทียบกับผู้ประเมินฝ่ายอื่นในนักศึกษาคนเดียวกัน"]
+  ]
+},
+{
+  id:"cert", tab:"วงจรใบรับรองสมรรถนะ",
+  title:"แผนภาพที่ 4 · วงจรการออกใบรับรองสมรรถนะ",
+  sub:"ระบบตรวจเงื่อนไขจากผลการประเมินจริง ผู้ดูแลระบบเป็นผู้อนุมัติและออกเลขที่ "+
+      "ผู้เรียนดาวน์โหลดใบรับรองได้เมื่อผ่านครบทุกสมรรถนะของชั้นปี",
+  cap:"<b>สิ่งที่แผนภาพนี้ชี้ให้เห็น</b> เงื่อนไขการได้รับใบรับรองถูกตรวจจากฐานข้อมูลเสมอ "+
+      "หน้าเว็บจึงปลอมสถานะไม่ได้ และการยกเลิกยังคงระเบียนไว้ให้ตรวจสอบย้อนหลัง",
+  nodes:[
+    {id:"d1",lane:"stu",col:0,kind:"start",t:["เปิดเมนูใบรับรอง","ในโปรไฟล์ของฉัน"]},
+    {id:"d2",lane:"sys",col:1,kind:"auto",t:["ตรวจเงื่อนไขจากฐานข้อมูล","ประเมินครบทุกสมรรถนะ","และถึงระดับเป้าหมาย"]},
+    {id:"d3",lane:"sys",col:2,kind:"dec",t:["ครบเงื่อนไข","หรือไม่"]},
+    {id:"d4",lane:"stu",col:3,kind:"task",t:["เห็นรายการสมรรถนะ","ที่ยังขาด"]},
+    {id:"d5",lane:"admin",col:3,kind:"task",t:["ตรวจรายชื่อผู้มีสิทธิ์","และกดออกใบรับรอง"]},
+    {id:"d6",lane:"sys",col:4,kind:"auto",t:["ออกเลขที่ใบรับรอง","บันทึกผู้ออกและวันที่"]},
+    {id:"d7",lane:"stu",col:5,kind:"end",t:["ดาวน์โหลดและพิมพ์","ใบรับรองสมรรถนะ"]},
+    {id:"d8",lane:"admin",col:5,kind:"task",t:["ยกเลิกใบรับรองได้","โดยระเบียนยังอยู่"]}
+  ],
+  edges:[["d1","d2"],["d2","d3"],["d3","d5","ครบแล้ว"],["d3","d4","ยังไม่ครบ"],
+    ["d4","d1","ประเมินเพิ่มแล้วตรวจใหม่",true],
+    ["d5","d6"],["d6","d7"],["d6","d8"]],
+  steps:[
+    ["นักศึกษา","เปิดเมนูใบรับรองสมรรถนะในโปรไฟล์ของตนเอง"],
+    ["ระบบ","ตรวจจากผลการประเมินจริงว่าครบทุกสมรรถนะของชั้นปีและถึงระดับเป้าหมายหรือยัง"],
+    ["ระบบ","สรุปผลการตรวจเงื่อนไขเป็นสถานะว่าผ่านหรือยังไม่ผ่าน"],
+    ["นักศึกษา","เมื่อยังไม่ครบ จะเห็นรายการสมรรถนะที่ยังขาดและคะแนนที่ต้องพัฒนา"],
+    ["ผู้ดูแลระบบ","ตรวจรายชื่อผู้มีสิทธิ์แล้วกดออกใบรับรอง ทีละคนหรือหลายคนพร้อมกัน"],
+    ["ระบบ","ออกเลขที่ใบรับรอง บันทึกผู้ออก วันที่ และระดับผลลงฐานข้อมูล"],
+    ["นักศึกษา","ดาวน์โหลดหรือพิมพ์ใบรับรองของตนเองได้ทันทีที่ออกเลขที่แล้ว"],
+    ["ผู้ดูแลระบบ","ยกเลิกใบรับรองได้เมื่อพบข้อผิดพลาด โดยระเบียนเดิมยังอยู่ให้ตรวจสอบย้อนหลัง"]
+  ]
+}
+];
+
+/** วาดแผนภาพ Swim-lane หนึ่งวงจรเป็น SVG
+    ตำแหน่งคำนวณจาก lane กับ col ของแต่ละกล่อง จึงเพิ่มหรือย้ายขั้นตอนได้โดยไม่ต้องแก้พิกัด */
+function swDraw(f){
+  const LW=120,COL=186,BW=152,BH=72,LH=118,TOP=30,RET=42,PADR=22,DW=140,DH=76;
+  const rows=SW_LANE.map((l,i)=>i).filter(i=>f.nodes.some(n=>SW_AT[n.lane]===i));
+  const at={}; rows.forEach((li,r)=>{at[li]=r;});
+  const cols=Math.max.apply(null,f.nodes.map(n=>n.col))+1;
+  const W=LW+cols*COL+PADR, endY=TOP+rows.length*LH, H=endY+RET, retY=endY+RET/2;
+  const P={};
+  f.nodes.forEach(n=>{
+    const w=n.kind==="dec"?DW:BW, h=n.kind==="dec"?DH:BH;
+    const cx=LW+n.col*COL+COL/2, cy=TOP+at[SW_AT[n.lane]]*LH+LH/2;
+    P[n.id]={cx:cx,cy:cy,w:w,h:h,l:cx-w/2,r:cx+w/2,t:cy-h/2,b:cy+h/2,col:n.col};
+  });
+
+  let s="";
+  rows.forEach((li,r)=>{
+    const y=TOP+r*LH, L=SW_LANE[li];
+    s+=`<rect class="ln ${L.c}" x="0" y="${y}" width="${W}" height="${LH}"></rect>`;
+    s+=`<line class="gd" x1="0" y1="${y}" x2="${W}" y2="${y}"></line>`;
+    L.t.forEach((tx,k)=>{
+      s+=`<text class="who" x="${LW-14}" y="${y+LH/2-(L.t.length-1)*8+k*16}">${esc(tx)}</text>`;
+    });
+  });
+  s+=`<line class="gd" x1="0" y1="${endY}" x2="${W}" y2="${endY}"></line>`;
+  s+=`<line class="gd" x1="${LW}" y1="${TOP}" x2="${LW}" y2="${endY}"></line>`;
+  s+=`<line class="gd" x1="${LW}" y1="${TOP-14}" x2="${W-12}" y2="${TOP-14}" marker-end="url(#sw-ar)"></line>`;
+  s+=`<text class="tm" x="${LW-14}" y="${TOP-14}">ลำดับเวลา</text>`;
+
+  /* เส้นเชื่อมวาดก่อนกล่อง ปลายเส้นจึงถูกกรอบกล่องบังไว้ */
+  f.edges.forEach(e=>{
+    const a=P[e[0]], b=P[e[1]], label=e[2], back=e[3];
+    if(!a||!b) return;
+    let d,lx,ly;
+    if(back){
+      d=`M ${a.cx} ${a.b} V ${retY} H ${b.cx} V ${b.b}`;
+      lx=(a.cx+b.cx)/2; ly=retY-8;
+    }else if(a.col===b.col){
+      const down=b.cy>a.cy;
+      d=`M ${a.cx} ${down?a.b:a.t} V ${down?b.t:b.b}`;
+      lx=a.cx+8; ly=(a.cy+b.cy)/2;
+    }else if(Math.abs(a.cy-b.cy)<1){
+      d=`M ${a.r} ${a.cy} H ${b.l}`;
+      lx=(a.r+b.l)/2; ly=a.cy-9;
+    }else{
+      const mid=(a.r+b.l)/2;
+      d=`M ${a.r} ${a.cy} H ${mid} V ${b.cy} H ${b.l}`;
+      lx=mid+6; ly=(a.cy+b.cy)/2-7;
+    }
+    s+=`<path class="cn${back?" back":""}" d="${d}" marker-end="url(#sw-ar)"></path>`;
+    if(label) s+=`<text class="el" x="${lx}" y="${ly}">${esc(label)}</text>`;
+  });
+
+  f.nodes.forEach(n=>{
+    const p=P[n.id], top=p.cy-(n.t.length-1)*8.5;
+    if(n.kind==="dec"){
+      s+=`<polygon class="dec" points="${p.cx},${p.t} ${p.r},${p.cy} ${p.cx},${p.b} ${p.l},${p.cy}"></polygon>`;
+    }else if(n.kind==="start"||n.kind==="end"){
+      s+=`<rect class="flow" x="${p.l}" y="${p.t}" width="${p.w}" height="${p.h}" rx="${p.h/2}"></rect>`;
+    }else if(n.kind==="auto"){
+      s+=`<rect class="auto" x="${p.l}" y="${p.t}" width="${p.w}" height="${p.h}" rx="9"></rect>`+
+         `<rect class="chip" x="${p.r-52}" y="${p.t-9}" width="52" height="18" rx="9"></rect>`+
+         `<text class="tc" x="${p.r-26}" y="${p.t}">อัตโนมัติ</text>`;
+    }else{
+      s+=`<rect class="task" x="${p.l}" y="${p.t}" width="${p.w}" height="${p.h}" rx="9"></rect>`;
+    }
+    const cls=(n.kind==="start"||n.kind==="end")?"tf":(n.kind==="auto"?"ta":"");
+    n.t.forEach((tx,i)=>{
+      s+=`<text class="${cls}" x="${p.cx}" y="${top+i*17}">${esc(tx)}</text>`;
+    });
+  });
+
+  return `<svg class="swd" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
+      aria-label="${esc(f.title)} ${esc(f.sub)}">
+    <defs><marker id="sw-ar" viewBox="0 0 9 9" refX="8" refY="4.5" markerWidth="5.5" markerHeight="5.5"
+      orient="auto"><path d="M0 0 L9 4.5 L0 9 Z"></path></marker></defs>${s}</svg>`;
+}
+
+function swInner(){
+  const i=RS_UI.sw, f=SW_FLOWS[i];
+  return `<div class="swtabs" role="group" aria-label="เลือกวงจรการทำงาน">
+      ${SW_FLOWS.map((x,k)=>`<button type="button" data-rs="sw:${k}" aria-pressed="${k===i}">
+        <span class="no">${k+1}</span>${esc(x.tab)}</button>`).join("")}
+      <button type="button" class="swfit" data-rs="swfit" aria-pressed="${RS_UI.swFit}">
+        ${RS_UI.swFit?"ดูขนาดเต็ม":"ย่อให้เห็นทั้งแผนภาพ"}</button>
+    </div>
+    <div class="swhd">${esc(f.title)}</div>
+    <div class="swsub">${esc(f.sub)}</div>
+    <div class="swwrap${RS_UI.swFit?" fit":""}">${swDraw(f)}</div>
+    <div class="swleg">
+      <span><i></i>งานที่ผู้ใช้ทำเอง</span>
+      <span><i class="auto"></i>ระบบทำให้อัตโนมัติ</span>
+      <span><i class="dec"></i>จุดตัดสินใจของระบบ</span>
+      <span><i class="flow"></i>เริ่มต้น / สิ้นสุดวงจร</span>
+    </div>
+    <div class="swcap">${f.cap}</div>
+    <details><summary>ดูขั้นตอนแบบข้อความสำหรับคัดลอกไปใช้</summary>
+      <ol class="swsteps">${f.steps.map(st=>
+        `<li><span class="wh${st[0]==="ระบบ"?" sys":""}">${esc(st[0])}</span><span>${esc(st[1])}</span></li>`
+      ).join("")}</ol></details>`;
+}
+
 function rsPerson(p){
   const dial="tel:"+String(p.tel).replace(/[^\d+]/g,"");
   return `<div class="person">
@@ -12703,12 +13019,16 @@ function rsBody(){
         <pre>${esc(RS_ASCII)}</pre></details>
     </div>
     <div class="sec">
+      <div class="lb">Swim-lane · ใครทำอะไรในขั้นตอนไหน</div>
+      <div id="swbox">${swInner()}</div>
+    </div>
+    <div class="sec">
       <div class="lb">คณะผู้วิจัย</div>
       <div class="people">${R.people.map(rsPerson).join("")}</div>
     </div>`;
 }
 
-const RS_UI={open:false};
+const RS_UI={open:false,sw:0,swFit:false};
 /** หน้าแรกเท่านั้น ไม่แสดงบนหน้าสมัครสมาชิกหรือหน้าลืมรหัสผ่าน */
 function rsOnFront(){
   return !S.user && ["register","regstudent","forgot"].indexOf(S.screen)<0;
@@ -12764,6 +13084,17 @@ document.addEventListener("click",e=>{
   /* คลิกบนเนื้อหาของหน้าต่างต้องไม่ปิด ปิดเฉพาะเมื่อคลิกที่พื้นหลังจริง ๆ */
   if(a==="backdrop"&&e.target!==el) return;
   e.stopPropagation(); e.preventDefault();
+  /* สลับวงจรหรือย่อขยายแผนภาพ วาดใหม่เฉพาะส่วนนั้น หน้าต่างจึงไม่เลื่อนกลับขึ้นบนสุด */
+  if(a==="swfit"||a.indexOf("sw:")===0){
+    if(a==="swfit") RS_UI.swFit=!RS_UI.swFit; else RS_UI.sw=Number(a.slice(3));
+    const box=document.getElementById("swbox");
+    if(box){
+      box.innerHTML=swInner();
+      const again=box.querySelector('[data-rs="'+a+'"]');
+      if(again) again.focus();
+    }
+    return;
+  }
   RS_UI.open=(a==="open");
   renderResearch();
   if(!RS_UI.open){ const b=document.getElementById("rsbtn"); if(b) b.focus(); }
