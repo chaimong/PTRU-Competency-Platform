@@ -1595,7 +1595,7 @@ const canVerifyEvidence=()=>EV_VERIFIERS.includes(S.role);
 const NAV_LABEL={dashboard:"หน้าหลัก",users:"ผู้ใช้งานและกลุ่ม",approvals:"คำขอสมัคร",
   framework:"กรอบสมรรถนะรายชั้นปี",psychometrics:"โมเดลวัดผล",assess:"การประเมิน",students:"นักศึกษา",
   portfolio:"แฟ้มสะสมงาน",myladder:"พัฒนาการของฉัน",analytics:"วิเคราะห์ภาพรวม",
-  diagnostic:"รายงานวินิจฉัยรายบุคคล",progress:"ความก้าวหน้ารายบุคคล",profile:"โปรไฟล์ของฉัน",edm:"Educational Data Mining",xai:"XAI & Fairness",irr:"ความสอดคล้องผู้ประเมิน",itemq:"คุณภาพข้อสอบ",exam:"แบบทดสอบสมรรถนะ",reports:"รายงาน",maintenance:"ซ่อมบำรุงฐานข้อมูล",
+  diagnostic:"รายงานวินิจฉัยรายบุคคล",progress:"ความก้าวหน้ารายบุคคล",profile:"โปรไฟล์ของฉัน",edm:"Educational Data Mining",xai:"XAI & Fairness",irr:"ความสอดคล้องผู้ประเมิน",itemq:"คุณภาพข้อสอบ",exam:"แบบทดสอบสมรรถนะ",reports:"รายงาน",maintenance:"ตั้งค่าและซ่อมบำรุงระบบ",
   certs:"ใบรับรองสมรรถนะ"};
 
 /* ประเภทการประเมิน สี่ประเภทแรกเป็นฝ่ายที่นับเข้าคะแนนรวมตาม SCORE_RULE
@@ -7936,8 +7936,40 @@ function maintenancePage(){
     live?`<div class="row"><button class="btn btn-primary btn-sm" data-act="mtdiag">${dg?"ตรวจสอบใหม่":"ตรวจสอบฐานข้อมูล"}</button>
       <button class="btn btn-ghost btn-sm" data-act="liverepair">ซ่อมข้อมูลอัตโนมัติ</button></div>`:"");
 
-  return `<div class="stack">${onCard}${diagCard}${concurrencyCard()}
+  return `<div class="stack">${onCard}${frontUiCard()}${diagCard}${concurrencyCard()}
     <div class="notebox">${docStamp("หน้านี้สงวนไว้สำหรับผู้ดูแลระบบ การเปิดโหมดซ่อมบำรุงและการซ่อมข้อมูลถูกบันทึกไว้ในชีต AuditLog ทุกครั้ง")}</div></div>`;
+}
+
+/** เปิด-ปิดการแสดงปุ่มโครงการวิจัยที่มุมล่างซ้ายของหน้าแรก
+    ปุ่มนี้อยู่บนหน้าเข้าสู่ระบบซึ่งทุกคนเห็นก่อนล็อกอิน ค่าจึงเก็บไว้ที่ฐานข้อมูล ไม่ใช่ในเครื่องผู้ดูแล */
+function frontUiCard(){
+  const live=(typeof liveOn==="function")&&liveOn();
+  const on=UIF.research;
+  const where=UIF.src==="server"
+    ? "ค่านี้อ่านจากฐานข้อมูล มีผลกับผู้ใช้ทุกคนที่เปิดหน้าแรก"
+    : UIF.src==="local"
+      ? "ขณะนี้ใช้ค่าที่จำไว้ในเครื่องนี้ ยังไม่ได้อ่านค่าจากฐานข้อมูล"
+      : "ยังไม่เคยตั้งค่า ระบบจึงแสดงปุ่มตามค่าตั้งต้น";
+  return card("ปุ่มโครงการวิจัยบนหน้าแรก",
+    "ปุ่มมุมล่างซ้ายของหน้าเข้าสู่ระบบ ที่เปิดดูข้อมูลโครงการวิจัยที่ได้รับทุนสนับสนุน กรอบแนวคิดการออกแบบ แผนภาพ Swim-lane และคณะผู้วิจัย",
+    `<div class="alert ${on?"alert-ok":"alert-info"}" style="margin-top:0">
+       <b>${on?"✅ แสดงปุ่มอยู่":"🚫 ซ่อนปุ่มอยู่"}</b><br>${esc(where)}
+       ${UIF.at?`<br>ตั้งค่าล่าสุดเมื่อ ${esc(String(UIF.at).slice(0,16).replace("T"," "))}`:""}</div>
+     <div class="hint" style="margin-bottom:.45rem">ปุ่มที่ผู้ใช้จะเห็นบนหน้าแรก</div>
+     <div style="display:inline-flex;align-items:center;gap:.6rem;padding:.55rem .8rem;border-radius:14px;
+       border:1px solid var(--line);background:var(--surface);box-shadow:0 4px 14px rgba(0,0,0,.08);
+       ${on?"":"opacity:.45;filter:grayscale(1)"}">
+       <span style="width:2.1rem;height:2.1rem;border-radius:10px;flex:none;display:flex;align-items:center;
+         justify-content:center;background:var(--c1);color:#fff;font-size:1.05rem">📘</span>
+       <span style="line-height:1.35"><b style="display:block;font-size:.85rem">โครงการวิจัย</b>
+         <i style="font-style:normal;font-size:.73rem;color:var(--muted)">ทุนสนับสนุนงานวิจัย มรภ.เลย ปีงบประมาณ 2569</i></span>
+     </div>
+     <div class="hint" style="margin-top:.6rem">ปิดไว้เมื่อไม่ต้องการให้หน้าแรกมีปุ่มนี้ เช่น ระหว่างนำระบบไปใช้จริงกับผู้ใช้ภายนอก
+       ข้อมูลโครงการวิจัยยังอยู่ครบ เพียงไม่แสดงปุ่มบนหน้าแรก</div>
+     ${live?"":`<div class="alert alert-info">ขณะนี้อยู่ในโหมดสาธิต การตั้งค่าจะมีผลเฉพาะเครื่องนี้จนกว่าจะเชื่อมต่อฐานข้อมูลจริง</div>`}`,
+    `<div class="row">${on
+      ? `<button class="btn btn-ghost btn-sm" data-act="rsui0">ปิดการแสดงปุ่มบนหน้าแรก</button>`
+      : `<button class="btn btn-primary btn-sm" data-act="rsui1">เปิดการแสดงปุ่มบนหน้าแรก</button>`}</div>`);
 }
 /** อธิบายและตรวจความพร้อมรองรับผู้ใช้พร้อมกันหลายคน
     ตัวเลขที่แสดงมาจากโครงสร้างจริงของระบบ ไม่ใช่ค่าที่ตั้งไว้เฉย ๆ */
@@ -10349,6 +10381,32 @@ const LIVE = {
 };
 const liveOn = () => LIVE.on && LIVE.session;
 
+/*───────── 21.2ก การแสดงผลหน้าแรก ตั้งจากฝั่งผู้ดูแลระบบ ─────────
+   ค่าจริงเก็บในชีต Settings คีย์ ui_flags และส่งมากับคำสั่ง health
+   จึงใช้ได้ตั้งแต่ก่อนเข้าสู่ระบบและมีผลกับผู้ใช้ทุกคน
+   สำเนาในเครื่องมีไว้ให้หน้าแรกวาดได้ทันทีระหว่างรอคำสั่ง health ตอบ
+   และเพื่อให้ค่ายังถูกต้องเมื่อคืนสภาพเซสชันเดิมซึ่งข้ามคำสั่ง health ไป */
+const UIF_KEY = 'ptru_ui_flags';
+const UIF = {
+  research: true,     // แสดงปุ่มโครงการวิจัยที่มุมล่างซ้ายของหน้าแรกหรือไม่
+  src: 'default',     // default = ยังไม่เคยอ่านค่า, local = จำไว้ในเครื่อง, server = อ่านจากฐานข้อมูล
+  at: '',
+};
+function uifLoad() {
+  try {
+    const o = JSON.parse(localStorage.getItem(UIF_KEY) || '{}');
+    if (typeof o.research === 'boolean') { UIF.research = o.research; UIF.src = 'local'; }
+  } catch (x) {}
+}
+function uifSet(o, src) {
+  if (!o || typeof o.research !== 'boolean') return;
+  UIF.research = o.research;
+  UIF.src = src || 'server';
+  UIF.at = String(o.at || '');
+  try { localStorage.setItem(UIF_KEY, JSON.stringify({research: UIF.research})); } catch (x) {}
+}
+uifLoad();
+
 function liveBusy(d) { LIVE.busy = Math.max(0, LIVE.busy + d); }
 function liveErr(e) { LIVE.err = (e && e.message) ? e.message : String(e || ''); }
 
@@ -10900,6 +10958,43 @@ async function setMaintenance(on) {
   } catch (e) { liveErr(maintErr(e)); toastFailed(maintErr(e).message || ''); }
   finally { liveBusy(-1); render(); }
 }
+/** เปิดหรือปิดการแสดงปุ่มโครงการวิจัยที่มุมล่างซ้ายของหน้าแรก
+    บันทึกลงชีต Settings จึงมีผลกับผู้ใช้ทุกคนที่เปิดหน้าแรกหลังจากนี้
+    ถ้าเซิร์ฟเวอร์ยังเป็นรุ่นที่ไม่มีคำสั่ง admin.ui จะแจ้งให้ติดตั้ง Code.gs รุ่นล่าสุด
+    แล้วใช้ค่าในเครื่องนี้ไปก่อน เพื่อให้ผู้ดูแลเห็นผลและตัดสินใจได้ */
+async function setFrontButton(on) {
+  if (!liveOn()) {                      // โหมดสาธิตไม่มีฐานข้อมูลให้บันทึก
+    uifSet({research: !!on}, 'local');
+    toastSaved(on ? 'เปิดการแสดงปุ่มโครงการวิจัยแล้ว (เฉพาะเครื่องนี้)'
+                  : 'ปิดการแสดงปุ่มโครงการวิจัยแล้ว (เฉพาะเครื่องนี้)');
+    render(); return;
+  }
+  liveBusy(1);
+  toast('⏳ กำลังบันทึกการตั้งค่าหน้าแรก…', 'wait', true);
+  try {
+    const r = await API.call('admin.ui', {set: JSON.stringify({research: !!on})});
+    uifSet((r && r.ui) || {research: !!on}, 'server');
+    if (LIVE.status) LIVE.status.ui = (r && r.ui) || {research: !!on};
+    LIVE.err = '';
+    LIVE.info = on
+      ? 'เปิดการแสดงปุ่มโครงการวิจัยบนหน้าแรกแล้ว ผู้ใช้ทุกคนจะเห็นปุ่มนี้'
+      : 'ปิดการแสดงปุ่มโครงการวิจัยบนหน้าแรกแล้ว ผู้ใช้จะไม่เห็นปุ่มนี้อีก';
+    toastSaved(LIVE.info);
+  } catch (e) {
+    const noRoute = String(e && e.code) === 'NO_ROUTE' || /ไม่พบคำสั่ง/.test((e && e.message) || '');
+    if (noRoute) {
+      /* เซิร์ฟเวอร์ยังเป็นรุ่นก่อน ให้ค่ามีผลกับเครื่องนี้ไปก่อน ผู้ดูแลจะได้เห็นผลที่ตั้งใจไว้
+         แต่บอกให้ชัดว่ายังไม่มีผลกับผู้ใช้คนอื่นจนกว่าจะ deploy Code.gs รุ่นล่าสุด */
+      uifSet({research: !!on}, 'local');
+      liveErr(new Error('เซิร์ฟเวอร์รุ่นที่ติดตั้งอยู่ยังไม่มีคำสั่ง admin.ui ' +
+        'ค่านี้จึงมีผลเฉพาะเครื่องนี้ ให้ติดตั้ง Code.gs รุ่นล่าสุดแล้ว deploy ใหม่'));
+      toastFailed('เซิร์ฟเวอร์ยังไม่รองรับ จึงมีผลเฉพาะเครื่องนี้');
+    } else {
+      liveErr(maintErr(e)); toastFailed(maintErr(e).message || '');
+    }
+  }
+  finally { liveBusy(-1); render(); }
+}
 /** สั่งตรวจสอบความสมบูรณ์ของฐานข้อมูล แล้วเก็บผลไว้แสดงในหน้าซ่อมบำรุง */
 async function runDiagnose() {
   if (!liveOn()) return;
@@ -11419,6 +11514,10 @@ document.addEventListener('click', e => {
     e.stopPropagation(); e.preventDefault();
     setMaintenance(a === 'mton'); return;
   }
+  if (a === 'rsui1' || a === 'rsui0') {
+    e.stopPropagation(); e.preventDefault();
+    setFrontButton(a === 'rsui1'); return;
+  }
   if (a === 'mtdiag') { e.stopPropagation(); e.preventDefault(); runDiagnose(); return; }
   if (a === 'mtload') { e.stopPropagation(); e.preventDefault(); runLoadCheck(); return; }
 
@@ -11879,6 +11978,7 @@ async function liveConnect(retry) {
     LIVE.status = h || null;
     LIVE.version = (h && h.version) || '';
     LIVE.err = '';
+    if (h && h.ui) uifSet(h.ui, 'server');   // การแสดงผลหน้าแรกตามที่ผู้ดูแลระบบตั้งไว้
     const d = (h && h.data) || {};
     LIVE.info = 'ติดต่อเซิร์ฟเวอร์ได้ ' + ((h && h.app) || '') + ' เวอร์ชัน ' + LIVE.version +
                 ' · ชีต ' + ((h && h.sheets_found) !== undefined ? h.sheets_found + '/' + h.sheets_expected
@@ -13029,8 +13129,10 @@ function rsBody(){
 }
 
 const RS_UI={open:false,sw:0,swFit:false};
-/** หน้าแรกเท่านั้น ไม่แสดงบนหน้าสมัครสมาชิกหรือหน้าลืมรหัสผ่าน */
+/** หน้าแรกเท่านั้น ไม่แสดงบนหน้าสมัครสมาชิกหรือหน้าลืมรหัสผ่าน
+    และต้องเปิดไว้ในหน้าตั้งค่าของผู้ดูแลระบบ (ชีต Settings คีย์ ui_flags) */
 function rsOnFront(){
+  if(typeof UIF!=="undefined"&&UIF.research===false) return false;
   return !S.user && ["register","regstudent","forgot"].indexOf(S.screen)<0;
 }
 function renderResearch(){
